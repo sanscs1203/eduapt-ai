@@ -5,9 +5,10 @@
 
 import { registerWithEmail } from './auth.js';
 
-document.addEventListener('DOMContentLoaded', () => {
-  const regStep1 = document.getElementById('stepAccountForm');
-  if (!regStep1) return;
+const regStep1 = document.getElementById('stepAccountForm');
+
+// Solo ejecutar si existe el formulario de registro
+if (regStep1) {
 
   const regState = {
     fullname: '', email: '', password: '',
@@ -147,12 +148,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('submitQuiz').addEventListener('click', async () => {
     const btn = document.getElementById('submitQuiz');
+    // Limpiar mensaje de error anterior
+    const errorDiv = document.getElementById('submitError');
+    if (errorDiv) {
+      errorDiv.classList.remove('visible');
+      errorDiv.innerHTML = '';
+    }
+
     btn.classList.add('loading');
     btn.disabled = true;
 
     try {
       const S = computeStudentState(regState);
-      // Registrar en Firebase Auth
       const user = await registerWithEmail(regState.email, regState.password);
       const uid = user.uid;
 
@@ -172,7 +179,6 @@ document.addEventListener('DOMContentLoaded', () => {
       sessionStorage.setItem('edu_uid', uid);
       sessionStorage.setItem('edu_S', JSON.stringify({ ...S, selfLevel: regState.selfLevel }));
 
-      // Renderizar resumen
       const correct = regState.quizAnswers.filter((a,i)=>a===QUIZ_QUESTIONS[i].correct).length;
       const total = QUIZ_QUESTIONS.length;
       let levelCat, levelClass;
@@ -195,19 +201,36 @@ document.addEventListener('DOMContentLoaded', () => {
       gotoStep(5);
       document.querySelectorAll('.step-dot').forEach(d => d.classList.add('done'));
       document.querySelectorAll('.step-line').forEach(l => l.classList.add('done'));
+
     } catch (error) {
-        console.log('[Register] Error completo:', error);
-        if (error && error.message) {
-            console.log('[Register]', error.message);
-        } else if (typeof error === 'string') {
-            console.log('[Register]', error);
-        } else {
-            console.log('[Register] Error inesperado:', JSON.stringify(error));
-        }
+      console.error('[Register] Error:', error);
+
+      // Restaurar el botón
+      btn.classList.remove('loading');
+      btn.disabled = false;
+
+      // Mensaje amigable según el código de error
+      let mensaje = 'Ocurrió un error inesperado. Intenta de nuevo.';
+      if (error && error.code === 'auth/email-already-in-use') {
+        mensaje = 'Este correo ya está registrado. <a href="login.html" style="color:#3B82F6;text-decoration:underline;">Inicia sesión aquí</a>.';
+      } else if (error && error.message) {
+        mensaje = error.message;
+      }
+
+      // Mostrar el error en el div de error del paso 4
+      const errDiv = document.getElementById('submitError');
+      if (errDiv) {
+        errDiv.innerHTML = mensaje;
+        errDiv.classList.add('visible');
+      } else {
+        // Si no existe (por si acaso), usar alert
+        alert(mensaje.replace(/<[^>]*>/g, ''));
+      }
     }
   });
 
   document.getElementById('goToApp').addEventListener('click', () => {
     window.location.href = 'index.html';
   });
-});
+
+} // fin del if (regStep1)

@@ -3,24 +3,27 @@
    Interfaz del chat con el tutor
    ============================================================ */
 
+import { CONFIG } from './config.js';
+
 let chatVisible = false;
 
 function showChatArea() {
   if (!chatVisible) {
     const welcomeScreen = document.getElementById('welcomeScreen');
-    welcomeScreen.style.display = 'none';
+    if (welcomeScreen) welcomeScreen.style.display = 'none';
     chatVisible = true;
   }
 }
 
 function scrollToBottom() {
   const messagesWrap = document.getElementById('messagesWrap');
-  messagesWrap.scrollTo({ top: messagesWrap.scrollHeight, behavior: 'smooth' });
+  if (messagesWrap) messagesWrap.scrollTo({ top: messagesWrap.scrollHeight, behavior: 'smooth' });
 }
 
 function appendMessage(html, sender) {
   showChatArea();
   const chatMessages = document.getElementById('chatMessages');
+  if (!chatMessages) return;
   const isUser = sender === 'user';
   const row = document.createElement('div');
   row.className = `msg-row ${isUser ? 'user' : 'bot'}`;
@@ -28,16 +31,16 @@ function appendMessage(html, sender) {
   const avatarDiv = document.createElement('div');
   avatarDiv.className = `msg-avatar ${isUser ? 'user-av' : 'bot'}`;
   avatarDiv.innerHTML = isUser
-    ? getInitial(sessionStorage.getItem('edu_user'))
+    ? window.getInitial(sessionStorage.getItem('edu_user'))
     : `<svg width="16" height="16" viewBox="0 0 28 28" fill="none"><path d="M14 2L24 8V20L14 26L4 20V8L14 2Z" stroke="#3B82F6" stroke-width="1.5" fill="none"/><circle cx="14" cy="14" r="3" fill="#3B82F6"/></svg>`;
 
   const bubble = document.createElement('div');
   bubble.className = 'msg-bubble';
-  bubble.innerHTML = renderText(html);
+  bubble.innerHTML = window.renderText(html);
 
   const meta = document.createElement('div');
   meta.className = 'msg-meta';
-  meta.textContent = isUser ? `Tú · ${formatTime()}` : `EduAdapt AI · ${formatTime()}`;
+  meta.textContent = isUser ? `Tú · ${window.formatTime()}` : `EduAdapt AI · ${window.formatTime()}`;
 
   const wrapper = document.createElement('div');
   wrapper.style.cssText = `display:flex;flex-direction:column;${isUser ? 'align-items:flex-end' : ''}`;
@@ -52,6 +55,7 @@ function appendMessage(html, sender) {
 
 function showTyping() {
   const chatMessages = document.getElementById('chatMessages');
+  if (!chatMessages) return;
   const row = document.createElement('div');
   row.className = 'msg-row bot';
   row.id = 'typingRow';
@@ -76,26 +80,29 @@ async function handleMessage(text) {
   if (!text.trim()) return;
   appendMessage(text, 'user');
   const msgInput = document.getElementById('msgInput');
-  msgInput.value = '';
-  msgInput.style.height = 'auto';
-  document.getElementById('sendBtn').disabled = true;
+  if (msgInput) {
+    msgInput.value = '';
+    msgInput.style.height = 'auto';
+  }
+  const sendBtn = document.getElementById('sendBtn');
+  if (sendBtn) sendBtn.disabled = true;
 
   const lower = text.toLowerCase().trim();
 
   // Feedback pendiente
-  if (pendingFeedback) {
+  if (window.pendingFeedback) {
     if (lower === 'me sirvió' || lower === 'me sirvio') {
       await fetch(`${CONFIG.API_BASE_URL}/api/feedback`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          session_id: activeSession?.sessionId,
-          question_id: pendingFeedback.questionId,
+          session_id: window.activeSession?.sessionId,
+          question_id: window.pendingFeedback.questionId,
           useful: true,
           uid: sessionStorage.getItem('edu_uid')
         })
       });
-      pendingFeedback = null;
+      window.pendingFeedback = null;
       appendMessage('👍 ¡Registrado! Me alegra que el recurso te haya sido útil.', 'bot');
       offerNextQuestion();
       return;
@@ -105,24 +112,24 @@ async function handleMessage(text) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          session_id: activeSession?.sessionId,
-          question_id: pendingFeedback.questionId,
+          session_id: window.activeSession?.sessionId,
+          question_id: window.pendingFeedback.questionId,
           useful: false,
           uid: sessionStorage.getItem('edu_uid')
         })
       });
-      pendingFeedback = null;
+      window.pendingFeedback = null;
       appendMessage('👎 Registrado. Evitaré repetirte ese recurso.', 'bot');
       offerNextQuestion();
       return;
     }
-    pendingFeedback = null;
+    window.pendingFeedback = null;
   }
 
   // Si hay pregunta pendiente
-  if (pendingQuestion) {
+  if (window.pendingQuestion) {
     showTyping();
-    const result = await submitAnswer(text);
+    const result = await window.submitAnswer(text);
     removeTyping();
     if (result) {
       if (result.is_correct) {
@@ -131,18 +138,17 @@ async function handleMessage(text) {
         appendMessage(`❌ **No exactamente.** ${result.explanation || ''}`, 'bot');
       }
       if (result.resource) {
-        pendingFeedback = {
-          questionId: pendingQuestion.id
+        window.pendingFeedback = {
+          questionId: window.pendingQuestion.id
         };
         setTimeout(() => {
           appendMessage(`📚 Recurso: [${result.resource.title}](${result.resource.url})\n\n¿El recurso te sirvió? Escribe **"me sirvió"** o **"no me sirvió"**.`, 'bot');
         }, 800);
       }
-      pendingQuestion = null;
-      // Si el backend devuelve siguiente pregunta, se podría mostrar automáticamente
+      window.pendingQuestion = null;
       if (result.next_question) {
-        pendingQuestion = result.next_question;
-        pendingQuestion.deliveredAt = Date.now();
+        window.pendingQuestion = result.next_question;
+        window.pendingQuestion.deliveredAt = Date.now();
         setTimeout(() => {
           appendMessage(`Siguiente: **${result.next_question.question}**`, 'bot');
         }, 1500);
@@ -154,23 +160,23 @@ async function handleMessage(text) {
   }
 
   // Comandos de continuación
-  if ((lower === 'sí' || lower === 'si' || lower === 'siguiente' || lower === 'otra') && currentTopic) {
-    if (!activeSession) await startSession(currentTopic);
+  if ((lower === 'sí' || lower === 'si' || lower === 'siguiente' || lower === 'otra') && window.currentTopic) {
+    if (!window.activeSession) await window.startSession(window.currentTopic);
     showTyping();
     const q = await fetchNextQuestion();
     removeTyping();
     if (q) {
-      pendingQuestion = q;
-      pendingQuestion.deliveredAt = Date.now();
+      window.pendingQuestion = q;
+      window.pendingQuestion.deliveredAt = Date.now();
       appendMessage(`**${q.question}**`, 'bot');
     }
     return;
   }
 
   if (lower === 'cambiar' || lower === 'otro tema') {
-    const metrics = await closeSession(true);
+    const metrics = await window.closeSession(true);
     if (metrics) {
-      appendMessage(formatSummary(metrics), 'bot');
+      appendMessage(window.formatSummary(metrics), 'bot');
     }
     appendMessage('¡Claro! Selecciona un tema de la barra lateral o escribe el nombre del tema.', 'bot');
     return;
@@ -179,13 +185,13 @@ async function handleMessage(text) {
   // Detección de tema por texto
   const detectedTopic = detectTopicFromText(lower);
   if (detectedTopic) {
-    if (currentTopic && currentTopic !== detectedTopic) await closeSession(true);
+    if (window.currentTopic && window.currentTopic !== detectedTopic) await window.closeSession(true);
     showTyping();
-    const q = await startSession(detectedTopic);
+    const q = await window.startSession(detectedTopic);
     removeTyping();
     if (q) {
-      pendingQuestion = q;
-      pendingQuestion.deliveredAt = Date.now();
+      window.pendingQuestion = q;
+      window.pendingQuestion.deliveredAt = Date.now();
       appendMessage(`Perfecto, vamos con **${CONFIG.TOPIC_LABELS[detectedTopic]}**.`, 'bot');
       appendMessage(`**${q.question}**`, 'bot');
     }
@@ -202,7 +208,7 @@ async function handleMessage(text) {
       body: JSON.stringify({
         message: text,
         uid: sessionStorage.getItem('edu_uid'),
-        S: studentS
+        S: window.studentS
       })
     });
     const data = await res.json();
@@ -215,7 +221,7 @@ async function fetchNextQuestion() {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      session_id: activeSession?.sessionId,
+      session_id: window.activeSession?.sessionId,
       uid: sessionStorage.getItem('edu_uid')
     })
   });
@@ -225,13 +231,13 @@ async function fetchNextQuestion() {
 }
 
 function offerNextQuestion() {
-  if (activeSession && activeSession.questions.length >= CONFIG.PILOT_QUESTION_LIMIT) {
+  if (window.activeSession && window.activeSession.questions.length >= CONFIG.PILOT_QUESTION_LIMIT) {
     appendMessage(`✅ **Sesión piloto completada** (${CONFIG.PILOT_QUESTION_LIMIT} preguntas respondidas). Guardando resumen...`, 'bot');
-    closeSession(true).then(metrics => {
-      if (metrics) appendMessage(formatSummary(metrics), 'bot');
+    window.closeSession(true).then(metrics => {
+      if (metrics) appendMessage(window.formatSummary(metrics), 'bot');
     });
   } else {
-    appendMessage(`¿Continuamos con **${CONFIG.TOPIC_LABELS[currentTopic]}**? Escribe **"sí"** para otra pregunta, **"cambiar"** para cerrar esta sesión y cambiar de tema.`, 'bot');
+    appendMessage(`¿Continuamos con **${CONFIG.TOPIC_LABELS[window.currentTopic]}**? Escribe **"sí"** para otra pregunta, **"cambiar"** para cerrar esta sesión y cambiar de tema.`, 'bot');
   }
 }
 
@@ -254,3 +260,14 @@ function formatSummary(metrics) {
   const durationStr = mins > 0 ? `${mins} min ${secs} s` : `${secs} s`;
   return `📊 **Resumen de sesión — ${metrics.topicLabel}**\n\n⏱️ Duración: **${durationStr}**\n❓ Preguntas: **${metrics.totalQuestions}**\n✅ Correctas: **${metrics.correctCount}** | ❌ Incorrectas: **${metrics.incorrectCount}**\n🎯 Precisión: **${Math.round(metrics.accuracy * 100)}%**\n\n🗺️ Ruta sugerida: ${metrics.suggestedPath}`;
 }
+
+// Exponer funciones en window
+window.showChatArea = showChatArea;
+window.appendMessage = appendMessage;
+window.showTyping = showTyping;
+window.removeTyping = removeTyping;
+window.handleMessage = handleMessage;
+window.detectTopicFromText = detectTopicFromText;
+window.formatSummary = formatSummary;
+window.offerNextQuestion = offerNextQuestion;
+window.fetchNextQuestion = fetchNextQuestion;

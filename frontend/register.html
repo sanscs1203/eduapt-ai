@@ -6,46 +6,6 @@
   <title>EduAdapt AI – Registro y Diagnóstico</title>
   <link rel="stylesheet" href="style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
-
-  <!-- ===== Firebase initialization (must load before script.js) ===== -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import {
-      getAuth,
-      createUserWithEmailAndPassword,
-      signInWithEmailAndPassword,
-      signOut,
-      onAuthStateChanged
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import {
-      getFirestore,
-      doc,
-      setDoc,
-      getDoc,
-      collection,
-      addDoc,
-      serverTimestamp
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyCLvJ3Bc05N9jQDtF9ZWfmK3V-WS5mzkjQ",
-      authDomain: "eduadapt-18f2f.firebaseapp.com",
-      projectId: "eduadapt-18f2f",
-      storageBucket: "eduadapt-18f2f.firebasestorage.app",
-      messagingSenderId: "109936681702",
-      appId: "1:109936681702:web:781ec030e2083e35f49127"
-    };
-
-    const app  = initializeApp(firebaseConfig);
-    window.fbAuth = getAuth(app);
-    window.fbDb   = getFirestore(app);
-    window.fbHelpers = {
-      createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged,
-      doc, setDoc, getDoc, collection, addDoc, serverTimestamp
-    };
-    window.firebaseReady = true;
-    window.dispatchEvent(new Event('firebase-ready'));
-  </script>
 </head>
 <body class="login-page">
 
@@ -279,6 +239,9 @@
         <div class="quiz-container" id="quizContainer">
           <!-- Questions rendered by JS -->
         </div>
+
+        <!-- Mensaje de error general para el paso 4 -->
+        <div class="error-msg" id="submitError" style="margin-top: 12px;"></div>
 
         <div class="step-nav">
           <button class="btn-secondary" id="back4">Atrás</button>

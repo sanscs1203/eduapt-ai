@@ -3,6 +3,8 @@
    Panel de recursos recomendados (backend-driven)
    ============================================================ */
 
+import { CONFIG } from './config.js';
+
 async function loadRecommendedResources() {
   const container = document.getElementById('resourcesList');
   if (!container) return;

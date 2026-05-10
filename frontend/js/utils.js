@@ -3,6 +3,8 @@
    Funciones de utilidad general
    ============================================================ */
 
+import { CONFIG } from './config.js';
+
 function formatTime() {
   return new Date().toLocaleTimeString('es-CO', {
     hour: '2-digit', minute: '2-digit'
@@ -35,3 +37,9 @@ function onFirebaseReady(callback) {
   if (window.firebaseReady) callback();
   else window.addEventListener(CONFIG.FIREBASE_READY_EVENT, callback, { once: true });
 }
+
+window.formatTime = formatTime;
+window.getInitial = getInitial;
+window.renderText = renderText;
+window.showToast = showToast;
+window.onFirebaseReady = onFirebaseReady;

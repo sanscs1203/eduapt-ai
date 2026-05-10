@@ -5,9 +5,11 @@
 
 import { loginWithEmail } from './auth.js';
 
-document.addEventListener('DOMContentLoaded', () => {
-  const loginForm = document.getElementById('loginForm');
-  if (!loginForm || document.getElementById('stepAccountForm')) return;
+// Código de inicialización (sin DOMContentLoaded)
+const loginForm = document.getElementById('loginForm');
+
+// Solo ejecutar si existe el formulario de login y NO existe el formulario de registro
+if (loginForm && !document.getElementById('stepAccountForm')) {
 
   const usernameInput = document.getElementById('username');
   const passwordInput = document.getElementById('password');
@@ -37,7 +39,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     try {
       const user = await loginWithEmail(email, pass);
-      // Obtener perfil de Firestore
       const uref = window.fbHelpers.doc(window.fbDb, 'users', user.uid);
       const snap = await window.fbHelpers.getDoc(uref);
       const profile = snap.exists() ? snap.data() : { fullname: email.split('@')[0] };
@@ -62,4 +63,4 @@ document.addEventListener('DOMContentLoaded', () => {
       loginBtn.disabled = false;
     }
   });
-});
+}
