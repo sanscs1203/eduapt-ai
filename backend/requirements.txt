@@ -1,0 +1,11 @@
+flask==3.1.0
+flask-cors==4.0.1
+firebase-admin==6.5.0
+sympy==1.13.3
+numpy==2.1.1
+scikit-learn==1.5.2
+scikit-surprise==1.1.4
+transformers==4.44.2
+torch==2.4.1
+pandas==2.2.2
+python-dotenv==1.0.1
