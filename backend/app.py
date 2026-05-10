@@ -1,6 +1,7 @@
 # app.py
 import sys
 import os
+from pathlib import Path
 import json
 import uuid
 import pickle
@@ -26,6 +27,8 @@ from llm.base_llm import BaseLLM
 from llm.dialo_gpt import DialoGPTLLM
 from llm.bert_templates import BertTemplateLLM
 from llm.seq2seq_attention import Seq2SeqAttentionLLM
+
+sys.path.insert(0, str(Path(__file__).parent))
 
 
 app = Flask(__name__)

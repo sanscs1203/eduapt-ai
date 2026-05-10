@@ -3,19 +3,21 @@
    Funciones de autenticación con Firebase Auth
    ============================================================ */
 
-async function loginWithEmail(email, password) {
+import { CONFIG } from './config.js';
+
+export async function loginWithEmail(email, password) {
   await onFirebaseReadyAsync();
   const cred = await window.fbHelpers.signInWithEmailAndPassword(window.fbAuth, email, password);
   return cred.user;
 }
 
-async function registerWithEmail(email, password) {
+export async function registerWithEmail(email, password) {
   await onFirebaseReadyAsync();
   const cred = await window.fbHelpers.createUserWithEmailAndPassword(window.fbAuth, email, password);
   return cred.user;
 }
 
-async function logout() {
+export async function logout() {
   if (window.fbAuth) {
     await window.fbHelpers.signOut(window.fbAuth);
   }

@@ -3,6 +3,8 @@
    Lógica de la página de login
    ============================================================ */
 
+import { loginWithEmail } from './auth.js';
+
 document.addEventListener('DOMContentLoaded', () => {
   const loginForm = document.getElementById('loginForm');
   if (!loginForm || document.getElementById('stepAccountForm')) return;

@@ -3,6 +3,8 @@
    Lógica de la página de registro con diagnóstico
    ============================================================ */
 
+import { registerWithEmail } from './auth.js';
+
 document.addEventListener('DOMContentLoaded', () => {
   const regStep1 = document.getElementById('stepAccountForm');
   if (!regStep1) return;

@@ -3,7 +3,7 @@
    Configuración global de la aplicación
    ============================================================ */
 
-const CONFIG = {
+export const CONFIG = {
   // Backend API
   API_BASE_URL: 'http://localhost:5000',   
 
