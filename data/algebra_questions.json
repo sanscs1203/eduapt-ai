@@ -1,0 +1,474 @@
+{
+  "polinomios": [
+    {
+      "id": "POL-01",
+      "type": "Conceptual",
+      "difficulty": "Easy",
+      "question": "¿Qué significa \"términos semejantes\" en un polinomio?",
+      "answer": "Son términos con la misma parte literal (mismas variables con los mismos exponentes); solo cambian los coeficientes.",
+      "link": "https://openstax.org/books/intermediate-algebra-2e/pages/5-1-add-and-subtract-polynomials"
+    },
+    {
+      "id": "POL-02",
+      "type": "Procedural",
+      "difficulty": "Easy",
+      "question": "Simplifica: (3x² + 2x) + (5x² − 7x)",
+      "answer": "8x² − 5x",
+      "link": "https://www.khanacademy.org/math/algebra-home/alg-polynomials"
+    },
+    {
+      "id": "POL-03",
+      "type": "Procedural",
+      "difficulty": "Easy",
+      "question": "Simplifica: (4x − 3) − (x + 5)",
+      "answer": "3x − 8",
+      "link": "https://www.khanacademy.org/math/algebra-home/alg-polynomials"
+    },
+    {
+      "id": "POL-04",
+      "type": "Procedural",
+      "difficulty": "Medium",
+      "question": "Multiplica: (x + 4)(x − 1)",
+      "answer": "x² + 3x − 4",
+      "link": "https://www.khanacademy.org/math/algebra-home/alg-polynomials"
+    },
+    {
+      "id": "POL-05",
+      "type": "Procedural",
+      "difficulty": "Medium",
+      "question": "Multiplica: (2x + 3)(x − 5)",
+      "answer": "2x² − 7x − 15",
+      "link": "https://www.khanacademy.org/math/algebra-home/alg-polynomials"
+    },
+    {
+      "id": "POL-06",
+      "type": "Conceptual",
+      "difficulty": "Medium",
+      "question": "¿Cuál es el error más común al restar polinomios?",
+      "answer": "No distribuir correctamente el signo \"−\" a todos los términos del segundo paréntesis.",
+      "link": "https://openstax.org/books/intermediate-algebra-2e/pages/5-1-add-and-subtract-polynomials"
+    },
+    {
+      "id": "POL-07",
+      "type": "Procedural",
+      "difficulty": "Hard",
+      "question": "Expande y simplifica: (x + 2)³",
+      "answer": "x³ + 6x² + 12x + 8",
+      "link": "https://www.khanacademy.org/math/algebra-home/alg-polynomials"
+    }
+  ],
+  "factorizacion": [
+    {
+      "id": "FAC-01",
+      "type": "Conceptual",
+      "difficulty": "Easy",
+      "question": "¿Qué es factorizar?",
+      "answer": "Reescribir una expresión como un producto de factores; es la operación inversa de multiplicar.",
+      "link": "https://openstax.org/books/intermediate-algebra-2e/pages/6-2-factor-trinomials"
+    },
+    {
+      "id": "FAC-02",
+      "type": "Procedural",
+      "difficulty": "Easy",
+      "question": "Factoriza: 5x + 10",
+      "answer": "5(x + 2)",
+      "link": "https://www.khanacademy.org/kmap/numerical-algebraic-expressions-d/x47f8e7cc3f3bd017:factoring-polynomials"
+    },
+    {
+      "id": "FAC-03",
+      "type": "Conceptual",
+      "difficulty": "Medium",
+      "question": "¿Cómo identificas si un trinomio es un cuadrado perfecto?",
+      "answer": "Si tiene la forma a² ± 2ab + b²; el primer y tercer término son cuadrados perfectos y el término central es el doble del producto de sus raíces.",
+      "link": "https://openstax.org/books/intermediate-algebra-2e/pages/6-4-factor-special-products"
+    },
+    {
+      "id": "FAC-04",
+      "type": "Procedural",
+      "difficulty": "Medium",
+      "question": "Factoriza: x² − 9",
+      "answer": "(x − 3)(x + 3)",
+      "link": "https://www.khanacademy.org/kmap/numerical-algebraic-expressions-d/x47f8e7cc3f3bd017:factoring-polynomials"
+    },
+    {
+      "id": "FAC-05",
+      "type": "Procedural",
+      "difficulty": "Medium",
+      "question": "Factoriza: x² + 7x + 12",
+      "answer": "(x + 3)(x + 4)",
+      "link": "https://www.khanacademy.org/kmap/numerical-algebraic-expressions-d/x47f8e7cc3f3bd017:factoring-polynomials"
+    },
+    {
+      "id": "FAC-06",
+      "type": "Procedural",
+      "difficulty": "Medium",
+      "question": "Factoriza: x² − 6x + 9",
+      "answer": "(x − 3)²",
+      "link": "https://openstax.org/books/intermediate-algebra-2e/pages/6-4-factor-special-products"
+    },
+    {
+      "id": "FAC-07",
+      "type": "Procedural",
+      "difficulty": "Hard",
+      "question": "Factoriza: 2x² + 5x + 3",
+      "answer": "(2x + 3)(x + 1)",
+      "link": "https://www.purplemath.com/modules/factquad2.htm"
+    }
+  ],
+  "ecuaciones": [
+    {
+      "id": "EQL-01",
+      "type": "Conceptual",
+      "difficulty": "Easy",
+      "question": "¿Qué significa \"resolver una ecuación\"?",
+      "answer": "Encontrar el/los valores de la variable que hacen verdadera la igualdad.",
+      "link": "https://openstax.org/books/intermediate-algebra-2e/pages/2-1-use-a-general-strategy-to-solve-linear-equations"
+    },
+    {
+      "id": "EQL-02",
+      "type": "Procedural",
+      "difficulty": "Easy",
+      "question": "Resuelve: 2x + 5 = 17",
+      "answer": "x = 6",
+      "link": "https://www.khanacademy.org/math/algebra/x2f8bb11595b61c86:linear-equations"
+    },
+    {
+      "id": "EQL-03",
+      "type": "Procedural",
+      "difficulty": "Easy",
+      "question": "Resuelve: 3x − 4 = 11",
+      "answer": "x = 5",
+      "link": "https://www.khanacademy.org/math/algebra/x2f8bb11595b61c86:linear-equations"
+    },
+    {
+      "id": "EQL-04",
+      "type": "Procedural",
+      "difficulty": "Medium",
+      "question": "Resuelve: 5(x − 2) = 15",
+      "answer": "x = 5",
+      "link": "https://www.khanacademy.org/math/algebra/x2f8bb11595b61c86:linear-equations"
+    },
+    {
+      "id": "EQL-05",
+      "type": "Procedural",
+      "difficulty": "Medium",
+      "question": "Resuelve: x/4 + 3 = 7",
+      "answer": "x = 16",
+      "link": "https://www.khanacademy.org/math/algebra/x2f8bb11595b61c86:linear-equations"
+    },
+    {
+      "id": "EQL-06",
+      "type": "Conceptual",
+      "difficulty": "Medium",
+      "question": "¿Cuándo decimos que una ecuación lineal tiene infinitas soluciones?",
+      "answer": "Cuando al simplificar ambos lados se obtiene una identidad (por ejemplo, 0 = 0); la ecuación es siempre verdadera.",
+      "link": "https://openstax.org/books/intermediate-algebra-2e/pages/2-1-use-a-general-strategy-to-solve-linear-equations"
+    },
+    {
+      "id": "EQL-07",
+      "type": "Procedural",
+      "difficulty": "Hard",
+      "question": "Resuelve: 2(3x − 1) − (x + 4) = 10",
+      "answer": "x = 3",
+      "link": "https://www.purplemath.com/modules/solvelin.htm"
+    }
+  ],
+  "sistemas": [
+    {
+      "id": "SYS-01",
+      "type": "Conceptual",
+      "difficulty": "Easy",
+      "question": "¿Qué representa la solución de un sistema 2×2?",
+      "answer": "Un par ordenado (x, y) que satisface ambas ecuaciones al mismo tiempo.",
+      "link": "https://openstax.org/books/intermediate-algebra-2e/pages/4-1-solve-systems-of-linear-equations-with-two-variables"
+    },
+    {
+      "id": "SYS-02",
+      "type": "Procedural",
+      "difficulty": "Medium",
+      "question": "Resuelve: { x + y = 5,  x − y = 1 }",
+      "answer": "x = 3, y = 2",
+      "link": "https://www.khanacademy.org/math/algebra/x2f8bb11595b61c86:systems-of-equations"
+    },
+    {
+      "id": "SYS-03",
+      "type": "Procedural",
+      "difficulty": "Medium",
+      "question": "Resuelve: { 2x + y = 9,  x + y = 6 }",
+      "answer": "x = 3, y = 3",
+      "link": "https://www.khanacademy.org/math/algebra/x2f8bb11595b61c86:systems-of-equations"
+    },
+    {
+      "id": "SYS-04",
+      "type": "Procedural",
+      "difficulty": "Medium",
+      "question": "Resuelve: { 3x − y = 8,  x + y = 6 }",
+      "answer": "x = 3.5, y = 2.5",
+      "link": "https://www.khanacademy.org/math/algebra/x2f8bb11595b61c86:systems-of-equations"
+    },
+    {
+      "id": "SYS-05",
+      "type": "Conceptual",
+      "difficulty": "Medium",
+      "question": "¿Cuándo un sistema no tiene solución?",
+      "answer": "Cuando las rectas son paralelas (inconsistente): no se cruzan.",
+      "link": "https://openstax.org/books/intermediate-algebra-2e/pages/4-1-solve-systems-of-linear-equations-with-two-variables"
+    },
+    {
+      "id": "SYS-06",
+      "type": "Procedural",
+      "difficulty": "Hard",
+      "question": "Resuelve por sustitución: { y = 2x − 1,  3x + y = 14 }",
+      "answer": "x = 3, y = 5",
+      "link": "https://www.khanacademy.org/math/algebra/x2f8bb11595b61c86:systems-of-equations"
+    },
+    {
+      "id": "SYS-07",
+      "type": "Procedural",
+      "difficulty": "Hard",
+      "question": "Resuelve: { 2x + 3y = 13,  4x − y = 5 }",
+      "answer": "x = 2, y = 3",
+      "link": "https://www.khanacademy.org/math/algebra/x2f8bb11595b61c86:systems-of-equations"
+    }
+  ],
+  "fracciones": [
+    {
+      "id": "FRA-01",
+      "type": "Conceptual",
+      "difficulty": "Easy",
+      "question": "¿Qué condición debe cumplir el denominador de una fracción algebraica?",
+      "answer": "No puede ser igual a cero (restricción del dominio).",
+      "link": "https://www.khanacademy.org/math/algebra2/x2ec2f6f830c9fb89:rational-expressions"
+    },
+    {
+      "id": "FRA-02",
+      "type": "Procedural",
+      "difficulty": "Easy",
+      "question": "Simplifica: (6x²) / (3x)  (x ≠ 0)",
+      "answer": "2x",
+      "link": "https://www.khanacademy.org/math/algebra2/x2ec2f6f830c9fb89:rational-expressions"
+    },
+    {
+      "id": "FRA-03",
+      "type": "Procedural",
+      "difficulty": "Easy",
+      "question": "Suma: 2/x + 3/x  (x ≠ 0)",
+      "answer": "5/x",
+      "link": "https://www.khanacademy.org/math/algebra2/x2ec2f6f830c9fb89:rational-expressions"
+    },
+    {
+      "id": "FRA-04",
+      "type": "Procedural",
+      "difficulty": "Medium",
+      "question": "Simplifica: (x² − 9) / (x − 3)  (x ≠ 3)",
+      "answer": "x + 3",
+      "link": "https://www.purplemath.com/modules/rtnldefs.htm"
+    },
+    {
+      "id": "FRA-05",
+      "type": "Procedural",
+      "difficulty": "Hard",
+      "question": "Simplifica: (x² − 4) / (x² + 2x)  (x ≠ 0, −2)",
+      "answer": "(x − 2) / x",
+      "link": "https://www.purplemath.com/modules/rtnldefs.htm"
+    },
+    {
+      "id": "FRA-06",
+      "type": "Procedural",
+      "difficulty": "Hard",
+      "question": "Resta: 1/x − 1/(x+1)  (x ≠ 0, −1)",
+      "answer": "1 / (x(x+1))",
+      "link": "https://www.khanacademy.org/math/algebra2/x2ec2f6f830c9fb89:rational-expressions"
+    },
+    {
+      "id": "FRA-07",
+      "type": "Conceptual",
+      "difficulty": "Hard",
+      "question": "¿Por qué no se puede cancelar x en (x+2)/x aunque x aparezca en ambos?",
+      "answer": "Porque x no es un factor del numerador; es un sumando. Solo se cancelan factores (multiplicativos), no sumandos.",
+      "link": "https://www.purplemath.com/modules/rtnldefs.htm"
+    }
+  ],
+  "potencias": [
+    {
+      "id": "POW-01",
+      "type": "Conceptual",
+      "difficulty": "Easy",
+      "question": "¿Qué pasa con los exponentes al multiplicar potencias de la misma base?",
+      "answer": "Se suman: xᵃ · xᵇ = xᵃ⁺ᵇ  (x ≠ 0).",
+      "link": "https://www.khanacademy.org/math/algebra/x2f8bb11595b61c86:exponents-radicals"
+    },
+    {
+      "id": "POW-02",
+      "type": "Procedural",
+      "difficulty": "Easy",
+      "question": "Simplifica: x³ · x²",
+      "answer": "x⁵",
+      "link": "https://www.khanacademy.org/math/algebra/x2f8bb11595b61c86:exponents-radicals"
+    },
+    {
+      "id": "POW-03",
+      "type": "Procedural",
+      "difficulty": "Easy",
+      "question": "Simplifica: x⁵ / x²  (x ≠ 0)",
+      "answer": "x³",
+      "link": "https://www.khanacademy.org/math/algebra/x2f8bb11595b61c86:exponents-radicals"
+    },
+    {
+      "id": "POW-04",
+      "type": "Procedural",
+      "difficulty": "Medium",
+      "question": "Simplifica: (2x²)³",
+      "answer": "8x⁶",
+      "link": "https://www.khanacademy.org/math/algebra/x2f8bb11595b61c86:exponents-radicals"
+    },
+    {
+      "id": "POW-05",
+      "type": "Procedural",
+      "difficulty": "Medium",
+      "question": "Simplifica: √(49x²)  (x ≥ 0)",
+      "answer": "7x",
+      "link": "https://www.purplemath.com/modules/radicals.htm"
+    },
+    {
+      "id": "POW-06",
+      "type": "Procedural",
+      "difficulty": "Medium",
+      "question": "Simplifica: √18",
+      "answer": "3√2",
+      "link": "https://www.purplemath.com/modules/radicals.htm"
+    },
+    {
+      "id": "POW-07",
+      "type": "Procedural",
+      "difficulty": "Hard",
+      "question": "Simplifica: (x⁻² · x⁵) / x⁰",
+      "answer": "x³",
+      "link": "https://www.khanacademy.org/math/algebra/x2f8bb11595b61c86:exponents-radicals"
+    }
+  ],
+  "funciones": [
+    {
+      "id": "FUN-01",
+      "type": "Conceptual",
+      "difficulty": "Easy",
+      "question": "¿Qué representa la pendiente (m) en y = mx + b?",
+      "answer": "La tasa de cambio: cuánto cambia y por cada 1 unidad que cambia x.",
+      "link": "https://www.khanacademy.org/math/algebra/x2f8bb11595b61c86:linear-functions"
+    },
+    {
+      "id": "FUN-02",
+      "type": "Procedural",
+      "difficulty": "Easy",
+      "question": "Si f(x) = 2x + 1, calcula f(3)",
+      "answer": "7",
+      "link": "https://www.khanacademy.org/math/algebra/x2f8bb11595b61c86:linear-functions"
+    },
+    {
+      "id": "FUN-03",
+      "type": "Procedural",
+      "difficulty": "Easy",
+      "question": "Identifica la pendiente en y = −3x + 5",
+      "answer": "m = −3",
+      "link": "https://www.khanacademy.org/math/algebra/x2f8bb11595b61c86:linear-functions"
+    },
+    {
+      "id": "FUN-04",
+      "type": "Conceptual",
+      "difficulty": "Medium",
+      "question": "¿Qué indica una pendiente negativa en una función lineal?",
+      "answer": "Que la función es decreciente: a medida que x aumenta, y disminuye.",
+      "link": "https://openstax.org/books/intermediate-algebra-2e/pages/3-5-relations-and-functions"
+    },
+    {
+      "id": "FUN-05",
+      "type": "Procedural",
+      "difficulty": "Medium",
+      "question": "Encuentra la recta con pendiente 2 que pasa por (0, 4)",
+      "answer": "y = 2x + 4",
+      "link": "https://www.khanacademy.org/math/algebra/x2f8bb11595b61c86:linear-functions"
+    },
+    {
+      "id": "FUN-06",
+      "type": "Procedural",
+      "difficulty": "Medium",
+      "question": "Con puntos (1, 2) y (3, 6), halla la pendiente",
+      "answer": "m = 2",
+      "link": "https://www.khanacademy.org/math/algebra/x2f8bb11595b61c86:linear-functions"
+    },
+    {
+      "id": "FUN-07",
+      "type": "Procedural",
+      "difficulty": "Medium",
+      "question": "Intersección con eje y de y = 4x − 9",
+      "answer": "b = −9  (punto: (0, −9))",
+      "link": "https://www.khanacademy.org/math/algebra/x2f8bb11595b61c86:linear-functions"
+    },
+    {
+      "id": "FUN-08",
+      "type": "Procedural",
+      "difficulty": "Hard",
+      "question": "Encuentra la ecuación de la recta que pasa por (2, 5) y (4, 11)",
+      "answer": "y = 3x − 1",
+      "link": "https://openstax.org/books/intermediate-algebra-2e/pages/3-5-relations-and-functions"
+    }
+  ],
+  "inecuaciones": [
+    {
+      "id": "INE-01",
+      "type": "Conceptual",
+      "difficulty": "Medium",
+      "question": "¿Qué cambia cuando divides o multiplicas una inecuación por un número negativo?",
+      "answer": "Se invierte el signo de la desigualdad (< ↔ >, ≤ ↔ ≥).",
+      "link": "https://openstax.org/books/intermediate-algebra-2e/pages/2-5-solve-linear-inequalities"
+    },
+    {
+      "id": "INE-02",
+      "type": "Procedural",
+      "difficulty": "Easy",
+      "question": "Resuelve: x + 3 > 10",
+      "answer": "x > 7",
+      "link": "https://www.khanacademy.org/math/algebra/x2f8bb11595b61c86:inequalities"
+    },
+    {
+      "id": "INE-03",
+      "type": "Procedural",
+      "difficulty": "Easy",
+      "question": "Resuelve: 2x ≤ 8",
+      "answer": "x ≤ 4",
+      "link": "https://www.khanacademy.org/math/algebra/x2f8bb11595b61c86:inequalities"
+    },
+    {
+      "id": "INE-04",
+      "type": "Procedural",
+      "difficulty": "Medium",
+      "question": "Resuelve: 3x − 5 < 1",
+      "answer": "x < 2",
+      "link": "https://www.khanacademy.org/math/algebra/x2f8bb11595b61c86:inequalities"
+    },
+    {
+      "id": "INE-05",
+      "type": "Procedural",
+      "difficulty": "Medium",
+      "question": "Resuelve: −2x ≥ 6",
+      "answer": "x ≤ −3",
+      "link": "https://www.purplemath.com/modules/ineqlin.htm"
+    },
+    {
+      "id": "INE-06",
+      "type": "Conceptual",
+      "difficulty": "Medium",
+      "question": "¿Cómo se representa la solución de x > 3 en la recta numérica?",
+      "answer": "Con un círculo abierto en 3 y flecha hacia la derecha (no incluye el 3).",
+      "link": "https://openstax.org/books/intermediate-algebra-2e/pages/2-5-solve-linear-inequalities"
+    },
+    {
+      "id": "INE-07",
+      "type": "Procedural",
+      "difficulty": "Hard",
+      "question": "Resuelve: (x − 1)/2 > 3",
+      "answer": "x > 7",
+      "link": "https://www.purplemath.com/modules/ineqlin.htm"
+    }
+  ]
+}
