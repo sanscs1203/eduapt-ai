@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>EduAdapt AI – Tutor de Álgebra</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+      signOut, onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import {
+      getFirestore, doc, setDoc, getDoc, collection, addDoc, serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCLvJ3Bc05N9jQDtF9ZWfmK3V-WS5mzkjQ",
+      authDomain: "eduadapt-18f2f.firebaseapp.com",
+      projectId: "eduadapt-18f2f",
+      storageBucket: "eduadapt-18f2f.firebasestorage.app",
+      messagingSenderId: "109936681702",
+      appId: "1:109936681702:web:781ec030e2083e35f49127"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    window.fbAuth = getAuth(app);
+    window.fbDb   = getFirestore(app);
+    window.fbHelpers = {
+      createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged,
+      doc, setDoc, getDoc, collection, addDoc, serverTimestamp
+    };
+    window.firebaseReady = true;
+    window.dispatchEvent(new Event('firebase-ready'));
+  </script>
+</head>
+<body class="app-page">
+
+  <div class="app-layout">
+
+    <!-- ===== SIDEBAR ===== -->
+    <aside class="sidebar" id="sidebar">
+
+      <div class="sidebar-logo">
+        <div class="logo-icon sm">
+          <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
+            <path d="M14 2L24 8V20L14 26L4 20V8L14 2Z" stroke="#3B82F6" stroke-width="1.5" fill="none"/>
+            <path d="M14 7L20 10.5V17.5L14 21L8 17.5V10.5L14 7Z" fill="#3B82F6" opacity="0.3"/>
+            <circle cx="14" cy="14" r="3" fill="#3B82F6"/>
+          </svg>
+        </div>
+        <span class="logo-text sm">EduAdapt<span class="logo-ai">AI</span></span>
+        <button class="sidebar-close" id="sidebarClose">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <button class="btn-new-chat" id="newChatBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        Nueva conversación
+      </button>
+
+      <div class="sidebar-section">
+        <span class="section-label">Temas de Álgebra</span>
+        <ul class="history-list" id="historyList">
+          <li class="history-item" data-topic="polinomios">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <span>Operaciones con polinomios</span>
+          </li>
+          <li class="history-item" data-topic="factorizacion">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <span>Factorización</span>
+          </li>
+          <li class="history-item" data-topic="ecuaciones">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <span>Ecuaciones lineales</span>
+          </li>
+          <li class="history-item" data-topic="sistemas">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <span>Sistemas de ecuaciones</span>
+          </li>
+          <li class="history-item" data-topic="fracciones">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <span>Fracciones algebraicas</span>
+          </li>
+          <li class="history-item" data-topic="potencias">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <span>Potencias y radicales</span>
+          </li>
+          <li class="history-item" data-topic="funciones">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <span>Funciones lineales</span>
+          </li>
+          <li class="history-item" data-topic="inecuaciones">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <span>Inecuaciones</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="sidebar-divider"></div>
+
+      <!-- Estado del estudiante -->
+      <div style="padding: 10px 8px 4px;">
+        <div style="font-size:0.68rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-faint);margin-bottom:8px;">Estado S actual</div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;display:flex;flex-direction:column;gap:6px;">
+          <div style="display:flex;justify-content:space-between;font-size:0.8rem;">
+            <span style="color:var(--text-muted);">Precisión (a)</span>
+            <span id="stateA" style="font-family:var(--font-mono);color:var(--blue);font-weight:600;">–</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:0.8rem;">
+            <span style="color:var(--text-muted);">Dificultad (d)</span>
+            <span id="stateD" style="font-family:var(--font-mono);color:var(--blue);font-weight:600;">–</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:0.8rem;">
+            <span style="color:var(--text-muted);">Nivel</span>
+            <span id="stateLevel" style="font-weight:600;font-size:0.78rem;">–</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-divider"></div>
+
+      <!-- Pilot mode toggle -->
+      <div style="padding: 4px 8px 12px;">
+        <div style="font-size:0.68rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-faint);margin-bottom:8px;">Modo de práctica</div>
+        <div style="display:flex;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;">
+          <button id="btnAdaptive" style="flex:1;padding:6px 0;font-size:0.78rem;font-weight:600;border:none;cursor:pointer;transition:background 0.2s,color 0.2s;background:var(--blue);color:#fff;">🧠 Adaptativo</button>
+          <button id="btnBaseline" style="flex:1;padding:6px 0;font-size:0.78rem;font-weight:600;border:none;cursor:pointer;transition:background 0.2s,color 0.2s;background:transparent;color:var(--text-muted);">📋 Tradicional</button>
+        </div>
+      </div>
+
+      <div class="sidebar-divider"></div>
+
+      <div class="user-card">
+        <div class="user-avatar" id="userAvatar">E</div>
+        <div class="user-info">
+          <span class="user-name" id="userName">Estudiante</span>
+          <span class="user-role">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+            </svg>
+            Estudiante
+          </span>
+        </div>
+        <button class="btn-logout" id="logoutBtn" title="Cerrar sesión">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+        </button>
+      </div>
+
+    </aside>
+
+    <!-- ===== MAIN CHAT ===== -->
+    <main class="chat-area">
+
+      <header class="chat-topbar">
+        <button class="menu-toggle" id="menuToggle">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+        </button>
+        <div class="topbar-info">
+          <div class="tutor-status">
+            <span class="status-dot"></span>
+            <span>EduAdapt AI · Tutor de Álgebra</span>
+          </div>
+        </div>
+        <div class="topbar-subject" id="topbarSubject">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+          </svg>
+          Álgebra
+        </div>
+      </header>
+
+      <div class="messages-wrap" id="messagesWrap">
+        <div class="messages-inner" id="messagesInner">
+
+          <div class="welcome-screen" id="welcomeScreen">
+            <div class="welcome-icon">
+              <svg width="36" height="36" viewBox="0 0 28 28" fill="none">
+                <path d="M14 2L24 8V20L14 26L4 20V8L14 2Z" stroke="#3B82F6" stroke-width="1.5" fill="none"/>
+                <path d="M14 7L20 10.5V17.5L14 21L8 17.5V10.5L14 7Z" fill="#3B82F6" opacity="0.25"/>
+                <circle cx="14" cy="14" r="3.5" fill="#3B82F6"/>
+              </svg>
+            </div>
+            <h2>¡Hola, <span id="welcomeName">Estudiante</span>!</h2>
+            <p>Soy tu tutor inteligente de <strong>Álgebra</strong>. Selecciona un tema o escribe tu pregunta para practicar con ejercicios adaptados a tu nivel.</p>
+            <div class="quick-topics">
+              <button class="topic-chip" data-topic="polinomios">📐 Polinomios</button>
+              <button class="topic-chip" data-topic="factorizacion">🔢 Factorización</button>
+              <button class="topic-chip" data-topic="ecuaciones">⚖️ Ecuaciones</button>
+              <button class="topic-chip" data-topic="sistemas">🔗 Sistemas</button>
+              <button class="topic-chip" data-topic="fracciones">➗ Fracciones</button>
+              <button class="topic-chip" data-topic="potencias">⚡ Potencias</button>
+              <button class="topic-chip" data-topic="funciones">📈 Funciones</button>
+              <button class="topic-chip" data-topic="inecuaciones">📊 Inecuaciones</button>
+            </div>
+          </div>
+
+          <div class="chat-messages" id="chatMessages"></div>
+
+        </div>
+      </div>
+
+      <div class="input-area">
+        <div class="input-box">
+          <textarea
+            id="msgInput"
+            placeholder="Escribe tu respuesta o pregunta... (Enter para enviar)"
+            rows="1"
+            maxlength="1000"
+          ></textarea>
+          <button class="btn-send" id="sendBtn" disabled>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="22" y1="2" x2="11" y2="13"/>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
+          </button>
+        </div>
+        <p class="input-hint">Las preguntas se adaptan automáticamente a tu estado S = [a, t, f, d].</p>
+      </div>
+
+    </main>
+  </div>
+
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <script src="script.js"></script>
+</body>
+</html>
