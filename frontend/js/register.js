@@ -195,19 +195,15 @@ document.addEventListener('DOMContentLoaded', () => {
       gotoStep(5);
       document.querySelectorAll('.step-dot').forEach(d => d.classList.add('done'));
       document.querySelectorAll('.step-line').forEach(l => l.classList.add('done'));
-    } catch (err) {
-      console.error('[Register]', err.code);
-      let msg = 'Error al registrar';
-      if (err.code==='auth/email-already-in-use') msg='Ese correo ya está registrado';
-      else if (err.code==='auth/invalid-email')   msg='Correo inválido';
-      else if (err.code==='auth/weak-password')   msg='Contraseña muy débil';
-      gotoStep(1);
-      const errBox  = document.getElementById('accountError');
-      const errText = document.getElementById('accountErrorText');
-      errText.textContent = msg;
-      errBox.classList.add('visible');
-      btn.classList.remove('loading');
-      btn.disabled = false;
+    } catch (error) {
+        console.log('[Register] Error completo:', error);
+        if (error && error.message) {
+            console.log('[Register]', error.message);
+        } else if (typeof error === 'string') {
+            console.log('[Register]', error);
+        } else {
+            console.log('[Register] Error inesperado:', JSON.stringify(error));
+        }
     }
   });
 
