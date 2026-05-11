@@ -16,50 +16,35 @@ from firebase_client import FirebaseClient
 from agents.student_model import StudentModel
 from agents.answer_evaluator import AnswerEvaluator
 
-# Recomendadores
 from recommenders.base_recommender import BaseRecommender
 from recommenders.knn_recommender import KNNRecommender
 from recommenders.svd_recommender import SVDRecommender
 from recommenders.random_forest_rec import RandomForestRecommender
 
-# LLMs
-from llm.base_llm import BaseLLM
-from llm.dialo_gpt import DialoGPTLLM
-from llm.bert_templates import BertTemplateLLM
-from llm.seq2seq_attention import Seq2SeqAttentionLLM
+# ÚNICO LLM: DialoGPT con RAG
+from llm.dialo_gpt_rag import DialoGPTRAGLLM
+from rag_engine import RAGEngine
 
 sys.path.insert(0, str(Path(__file__).parent))
-
 
 app = Flask(__name__)
 CORS(app)
 app.config.from_object(Config)
 
-# Inicializar clientes y modelos
 firebase_client = FirebaseClient()
 evaluator = AnswerEvaluator()
 student_model = StudentModel()
 
-# Banco de preguntas cargado en memoria
 QUESTION_BANK = {}
 
-# Modelos de recomendación (se llenan al inicio si los archivos existen)
-recommenders = {
-    'knn': None,
-    'svd': None,
-    'rf': None
-}
+recommenders = {'knn': None, 'svd': None, 'rf': None}
 
-# Modelos de lenguaje
-llm_models = {
-    'dialogpt': None,
-    'bert_template': BertTemplateLLM(),
-    'seq2seq': None
-}
+# Inicializar RAG y el único LLM
+rag_engine = RAGEngine()
+llm_chat = None   # se cargará después de indexar preguntas
 
-# Sesiones activas en memoria (diccionario)
 active_sessions = {}
-
+chat_histories = {}
 
 # ----------------------------------------------------------------
 # Carga inicial
@@ -73,18 +58,15 @@ def load_question_bank():
         print(f"Question bank loaded: {sum(len(v) for v in QUESTION_BANK.values())} questions")
     else:
         print(f"WARN: Question bank not found at {path}")
-        # Banco mínimo de prueba
         QUESTION_BANK = {
-            "polinomios": [
-                {
-                    "id": "POL-01",
-                    "type": "Procedural",
-                    "difficulty": "Easy",
-                    "question": "Simplifica: (3x² + 2x) + (5x² − 7x)",
-                    "answer": "8x² − 5x",
-                    "link": "https://www.khanacademy.org/math/algebra"
-                }
-            ]
+            "polinomios": [{
+                "id": "POL-01",
+                "type": "Procedural",
+                "difficulty": "Easy",
+                "question": "Simplifica: (3x² + 2x) + (5x² − 7x)",
+                "answer": "8x² − 5x",
+                "link": "https://www.khanacademy.org/math/algebra"
+            }]
         }
 
 def load_recommenders():
@@ -97,46 +79,33 @@ def load_recommenders():
         else:
             print(f"Model {name} not found, will use static fallback")
 
-def load_llms():
-    # DialoGPT es pesado, cargar solo si se necesita (bajo demanda)
+def init_llm():
+    global llm_chat
     try:
-        llm_models['dialogpt'] = DialoGPTLLM()
-        print("DialoGPT loaded")
+        llm_chat = DialoGPTRAGLLM(rag_engine=rag_engine)
+        print("✅ DialoGPT-RAG cargado (único modelo conversacional)")
     except Exception as e:
-        print(f"Could not load DialoGPT: {e}")
-
-    try:
-        llm_models['seq2seq'] = Seq2SeqAttentionLLM()
-        print("Seq2Seq loaded")
-    except Exception as e:
-        print(f"Could not load Seq2Seq: {e}")
-
+        print(f"❌ Error cargando DialoGPT-RAG: {e}")
+        llm_chat = None
 
 # ----------------------------------------------------------------
 # Helpers
 # ----------------------------------------------------------------
 def pick_question(topic, S, used_ids, mode='adaptive'):
-    """Selecciona siguiente pregunta del banco según modo y estado S"""
     pool = QUESTION_BANK.get(topic, [])
     if not pool:
         return None
-
     available = [q for q in pool if q['id'] not in used_ids]
     if not available:
-        # Reiniciar preguntas usadas si ya se agotaron
         available = pool
-
     if mode == 'baseline':
         return available[0] if available else None
-
-    # Modo adaptativo: ordenar por cercanía a la dificultad objetivo
     target_diff = student_model.get_target_difficulty(S)
     diff_order = {'Easy': 0, 'Medium': 1, 'Hard': 2}
     available.sort(key=lambda q: abs(diff_order.get(q.get('difficulty', 'Medium'), 1) - diff_order[target_diff]))
     return available[0] if available else None
 
 def find_question_by_id(qid):
-    """Busca una pregunta por ID en todo el banco"""
     for topic, questions in QUESTION_BANK.items():
         for q in questions:
             if q.get('id') == qid:
@@ -144,7 +113,6 @@ def find_question_by_id(qid):
                 q['topic'] = topic
                 return q
     return None
-
 
 # ----------------------------------------------------------------
 # Endpoints
@@ -155,7 +123,7 @@ def health():
         'status': 'ok',
         'question_bank_loaded': len(QUESTION_BANK) > 0,
         'recommenders_loaded': [name for name, m in recommenders.items() if m is not None],
-        'llms_loaded': [name for name, m in llm_models.items() if m is not None]
+        'llm_available': llm_chat is not None
     })
 
 @app.route('/api/session/start', methods=['POST'])
@@ -165,18 +133,14 @@ def session_start():
     topic = data.get('topic')
     mode = data.get('mode', 'adaptive')
     S = data.get('S')
-
     if not topic:
         return jsonify({'error': 'Topic is required'}), 400
-
-    # Si no se envía S, intentar obtenerlo del usuario en Firestore
     if not S and uid:
         user = firebase_client.get_user(uid)
         if user and 'S' in user:
             S = user['S']
     if not S:
         S = student_model.initial_state('mid')
-
     session_id = f"sess_{uuid.uuid4().hex[:12]}"
     active_sessions[session_id] = {
         'session_id': session_id,
@@ -188,12 +152,8 @@ def session_start():
         'S': S,
         'used_questions': set()
     }
-
     question = pick_question(topic, S, set(), mode)
-    return jsonify({
-        'session_id': session_id,
-        'first_question': question
-    })
+    return jsonify({'session_id': session_id, 'first_question': question})
 
 @app.route('/api/session/next', methods=['POST'])
 def session_next():
@@ -202,12 +162,10 @@ def session_next():
     session = active_sessions.get(session_id)
     if not session:
         return jsonify({'error': 'Session not found'}), 404
-
     S = session['S']
     topic = session['topic']
     used = session['used_questions']
     mode = session['mode']
-
     question = pick_question(topic, S, used, mode)
     if question:
         session['used_questions'].add(question['id'])
@@ -221,28 +179,17 @@ def evaluate():
     question_id = data.get('question_id')
     response_time = data.get('response_time', 30)
     uid = data.get('uid')
-
     session = active_sessions.get(session_id)
     if not session:
         return jsonify({'error': 'Session not found'}), 404
-
     question = find_question_by_id(question_id)
     if not question:
         return jsonify({'error': 'Question not found'}), 404
-
-    # Manejar petición directa de ver respuesta
     if user_answer.lower().strip() in ('ver respuesta', 'no sé', 'no se', 'respuesta'):
-        result = {
-            'is_correct': False,
-            'explanation': f"La respuesta correcta es: {question['answer']}. Te sugiero estudiar el recurso asociado.",
-            'method': 'direct-answer'
-        }
+        result = {'is_correct': False, 'explanation': f"La respuesta correcta es: {question['answer']}. Te sugiero estudiar el recurso asociado.", 'method': 'direct-answer'}
     else:
         result = evaluator.evaluate(user_answer, question['answer'], question.get('type', 'Procedural'))
-
-    # Actualizar estado S
     old_S = session['S']
-    # Obtener self_level del perfil si es posible
     self_level = 'mid'
     if uid:
         user = firebase_client.get_user(uid)
@@ -250,64 +197,18 @@ def evaluate():
             self_level = user['selfLevel']
     new_S = student_model.update(old_S, result['is_correct'], response_time, self_level)
     session['S'] = new_S
-
-    # Registrar pregunta en la sesión
-    session['questions'].append({
-        'question_id': question_id,
-        'correct': result['is_correct'],
-        'time_spent': response_time,
-        'S_before': old_S,
-        'S_after': new_S
-    })
-
-    # Guardar interacción en Firestore (ignorar si falla)
+    session['questions'].append({'question_id': question_id, 'correct': result['is_correct'], 'time_spent': response_time, 'S_before': old_S, 'S_after': new_S})
     try:
-        firebase_client.save_interaction({
-            'uid': uid,
-            'session_id': session_id,
-            'topic': session['topic'],
-            'question_id': question_id,
-            'difficulty': question.get('difficulty'),
-            'type': question.get('type'),
-            'pilotMode': session['mode'],
-            'userMsg': user_answer,
-            'correct': result['is_correct'],
-            'S_after': new_S,
-            'createdAt': firestore.SERVER_TIMESTAMP
-        })
+        firebase_client.save_interaction({'uid': uid, 'session_id': session_id, 'topic': session['topic'], 'question_id': question_id, 'difficulty': question.get('difficulty'), 'type': question.get('type'), 'pilotMode': session['mode'], 'userMsg': user_answer, 'correct': result['is_correct'], 'S_after': new_S, 'createdAt': firestore.SERVER_TIMESTAMP})
     except Exception as e:
         print(f"Error saving interaction: {e}")
-
-    # Siguiente pregunta
     used = session['used_questions']
     used.add(question_id)
     next_question = pick_question(session['topic'], new_S, used, session['mode'])
-
-    # Recurso asociado a esta pregunta
-    resource = {
-        'title': f"Recurso: {question.get('id', '')}",
-        'url': question.get('link', '#'),
-        'type': question.get('type', ''),
-        'description': question.get('answer', '')[:100] + '...'
-    }
-
-    # Explicación XAI
+    resource = {'title': f"Recurso: {question.get('id', '')}", 'url': question.get('link', '#'), 'type': question.get('type', ''), 'description': question.get('answer', '')[:100] + '...'}
     tier = student_model.get_tier(new_S)
-    explanation = (
-        f"Tu precisión actual es {new_S['a']:.2f} (nivel: {tier}). "
-        f"Has respondido {'correctamente' if result['is_correct'] else 'incorrectamente'} "
-        f"a esta pregunta de dificultad {question.get('difficulty', 'Medium')} "
-        f"en {question.get('topic', session['topic'])}."
-    )
-
-    return jsonify({
-        'is_correct': result['is_correct'],
-        'explanation': result['explanation'],
-        'S_new': new_S,
-        'next_question': next_question,
-        'resource': resource,
-        'xai_explanation': explanation
-    })
+    explanation = f"Tu precisión actual es {new_S['a']:.2f} (nivel: {tier}). Has respondido {'correctamente' if result['is_correct'] else 'incorrectamente'} a esta pregunta de dificultad {question.get('difficulty', 'Medium')} en {question.get('topic', session['topic'])}."
+    return jsonify({'is_correct': result['is_correct'], 'explanation': result['explanation'], 'S_new': new_S, 'next_question': next_question, 'resource': resource, 'xai_explanation': explanation})
 
 @app.route('/api/session/close', methods=['POST'])
 def session_close():
@@ -316,50 +217,18 @@ def session_close():
     session = active_sessions.pop(session_id, None)
     if not session:
         return jsonify({'error': 'Session not found'}), 404
-
     questions = session['questions']
     if not questions:
         return jsonify({'message': 'No questions answered'})
-
     total = len(questions)
     correct = sum(1 for q in questions if q['correct'])
     accuracy = correct / total if total else 0
     total_time = sum(q.get('time_spent', 0) for q in questions)
-
-    metrics = {
-        'session_id': session_id,
-        'topic': session['topic'],
-        'topicLabel': session.get('topicLabel', session['topic']),
-        'totalQuestions': total,
-        'correctCount': correct,
-        'incorrectCount': total - correct,
-        'accuracy': round(accuracy, 2),
-        'totalTimeSec': round(total_time, 1),
-        'avgTimeSec': round(total_time / total, 1) if total else 0,
-        'suggestedPath': 'Seguir practicando para mejorar la precisión.',
-        'S_end': session['S']
-    }
-
-    # Guardar sesión en Firestore
+    metrics = {'session_id': session_id, 'topic': session['topic'], 'topicLabel': session.get('topicLabel', session['topic']), 'totalQuestions': total, 'correctCount': correct, 'incorrectCount': total - correct, 'accuracy': round(accuracy, 2), 'totalTimeSec': round(total_time, 1), 'avgTimeSec': round(total_time / total, 1) if total else 0, 'suggestedPath': 'Seguir practicando para mejorar la precisión.', 'S_end': session['S']}
     try:
-        firebase_client.save_session({
-            'sessionId': session_id,
-            'uid': session['uid'],
-            'topic': session['topic'],
-            'topicLabel': session.get('topicLabel', ''),
-            'pilotMode': session['mode'],
-            'pilotRunId': 'pilot_final_2026_05',
-            'startedAt': session['start_time'],
-            'endedAt': firestore.SERVER_TIMESTAMP,
-            'totalQuestions': total,
-            'correctCount': correct,
-            'accuracy': accuracy,
-            'totalTimeSec': total_time,
-            'questions': questions
-        })
+        firebase_client.save_session({'sessionId': session_id, 'uid': session['uid'], 'topic': session['topic'], 'topicLabel': session.get('topicLabel', ''), 'pilotMode': session['mode'], 'pilotRunId': 'pilot_final_2026_05', 'startedAt': session['start_time'], 'endedAt': firestore.SERVER_TIMESTAMP, 'totalQuestions': total, 'correctCount': correct, 'accuracy': accuracy, 'totalTimeSec': total_time, 'questions': questions})
     except Exception as e:
         print(f"Error saving session: {e}")
-
     return jsonify(metrics)
 
 @app.route('/api/recommend', methods=['POST'])
@@ -369,124 +238,102 @@ def recommend():
     topic = data.get('topic')
     mode = data.get('mode', 'adaptive')
     S = data.get('S')
-    # Modelo a usar: knn, svd, rf (por defecto knn si está disponible)
     model_name = request.args.get('model', 'knn')
-
     if not S and uid:
         user = firebase_client.get_user(uid)
         if user and 'S' in user:
             S = user['S']
     if not S:
         S = student_model.initial_state()
-
-    # Intentar usar modelo de recomendación
     model = recommenders.get(model_name)
     resources = []
     model_used = 'static'
-
     if model:
         try:
             recommended_ids = model.recommend(uid, topic, S, n=3)
             for qid in recommended_ids:
                 q = find_question_by_id(qid)
                 if q:
-                    resources.append({
-                        'id': qid,
-                        'title': q['question'][:60],
-                        'url': q.get('link', '#'),
-                        'type': q.get('type', ''),
-                        'justification': (
-                            f"Recomendado por modelo {model_name.upper()} porque "
-                            f"tu precisión ({S['a']:.2f}) y nivel ({student_model.get_tier(S)}) "
-                            f"indican que este recurso de dificultad {q.get('difficulty', 'Media')} es adecuado."
-                        )
-                    })
+                    resources.append({'id': qid, 'title': q['question'][:60], 'url': q.get('link', '#'), 'type': q.get('type', ''), 'justification': f"Recomendado por modelo {model_name.upper()} porque tu precisión ({S['a']:.2f}) y nivel ({student_model.get_tier(S)}) indican que este recurso de dificultad {q.get('difficulty', 'Media')} es adecuado."})
             model_used = model_name
         except Exception as e:
             print(f"Recommender {model_name} failed: {e}")
-
-    # Fallback a recursos estáticos si no se obtuvieron suficientes
     if len(resources) < 3:
         pool = QUESTION_BANK.get(topic, [])
         for q in pool:
-            if len(resources) >= 3:
-                break
-            # Evitar duplicados
+            if len(resources) >= 3: break
             if not any(r['id'] == q['id'] for r in resources):
-                resources.append({
-                    'id': q['id'],
-                    'title': q['question'][:60],
-                    'url': q.get('link', '#'),
-                    'type': q.get('type', ''),
-                    'justification': f"Recurso del tema {topic} para reforzar conceptos."
-                })
-
-    return jsonify({
-        'resources': resources[:3],
-        'model_used': model_used
-    })
+                resources.append({'id': q['id'], 'title': q['question'][:60], 'url': q.get('link', '#'), 'type': q.get('type', ''), 'justification': f"Recurso del tema {topic} para reforzar conceptos."})
+    return jsonify({'resources': resources[:3], 'model_used': model_used})
 
 @app.route('/api/feedback', methods=['POST'])
 def feedback():
     data = request.get_json()
     try:
-        firebase_client.save_feedback({
-            'uid': data.get('uid'),
-            'sessionId': data.get('session_id'),
-            'topic': data.get('topic'),
-            'questionId': data.get('question_id'),
-            'useful': data.get('useful', False),
-            'createdAt': firestore.SERVER_TIMESTAMP
-        })
+        firebase_client.save_feedback({'uid': data.get('uid'), 'sessionId': data.get('session_id'), 'topic': data.get('topic'), 'questionId': data.get('question_id'), 'useful': data.get('useful', False), 'createdAt': firestore.SERVER_TIMESTAMP})
     except Exception as e:
         print(f"Error saving feedback: {e}")
     return jsonify({'status': 'ok'})
 
 @app.route('/api/chat', methods=['POST'])
 def chat():
+    global llm_chat
     data = request.get_json()
     message = data.get('message', '')
-    model_name = data.get('model', 'bert_template')
     uid = data.get('uid')
     S = data.get('S')
     topic = data.get('topic')
+    chat_session_id = data.get('chat_session_id')
 
-    context = {
-        'uid': uid,
-        'S': S,
-        'topic': topic,
-        'mode': data.get('mode', 'adaptive')
-    }
+    if not chat_session_id:
+        chat_session_id = f"chat_{uuid.uuid4().hex[:12]}"
 
-    llm = llm_models.get(model_name)
-    if llm is None:
-        llm = llm_models['bert_template']  # fallback seguro
+    if llm_chat is None:
+        return jsonify({'reply': 'El tutor aún no está listo. Intenta en unos segundos.', 'chat_session_id': chat_session_id}), 503
+
+    history = chat_histories.get(chat_session_id, [])
+    context = {'uid': uid, 'S': S, 'topic': topic, 'mode': data.get('mode', 'adaptive'), 'chat_history': history}
 
     try:
-        reply = llm.generate(message, context)
+        reply = llm_chat.generate(message, context)
     except Exception as e:
-        reply = f"Lo siento, ocurrió un error al generar la respuesta. Por favor selecciona un tema de Álgebra."
+        print(f"Error en chat: {e}")
+        reply = "Lo siento, ocurrió un error. Por favor intenta de nuevo."
 
-    return jsonify({
-        'reply': reply,
-        'model_used': llm.name() if hasattr(llm, 'name') else model_name
-    })
+    history.append({"role": "user", "content": message})
+    history.append({"role": "assistant", "content": reply})
+    if len(history) > 10:
+        history = history[-10:]
+    chat_histories[chat_session_id] = history
+
+    return jsonify({'reply': reply, 'model_used': llm_chat.name(), 'chat_session_id': chat_session_id})
+
+@app.route('/api/chat/reset', methods=['POST'])
+def chat_reset():
+    data = request.get_json()
+    chat_session_id = data.get('chat_session_id')
+    if not chat_session_id:
+        return jsonify({'error': 'chat_session_id required'}), 400
+    if chat_session_id in chat_histories:
+        del chat_histories[chat_session_id]
+    return jsonify({'status': 'reset', 'chat_session_id': chat_session_id})
 
 @app.route('/api/models/status', methods=['GET'])
 def models_status():
     return jsonify({
         'recommenders_available': [name for name, m in recommenders.items() if m is not None],
-        'llms_available': [name for name, m in llm_models.items() if m is not None],
+        'llm_available': llm_chat is not None,
         'question_bank_size': sum(len(v) for v in QUESTION_BANK.values())
     })
 
 # ----------------------------------------------------------------
-# Inicio de la aplicación
+# Inicio
 # ----------------------------------------------------------------
 if __name__ == '__main__':
     load_question_bank()
+    if QUESTION_BANK:
+        rag_engine.index_questions(QUESTION_BANK)
     os.makedirs(app.config['MODELS_DIR'], exist_ok=True)
     load_recommenders()
-    # Cargar LLMs bajo demanda o aquí; DialoGPT puede ser pesado
-    # load_llms()  # Descomentar si quieres cargar todos al iniciar
+    init_llm()
     app.run(debug=app.config['DEBUG'], host=app.config['HOST'], port=app.config['PORT'])
