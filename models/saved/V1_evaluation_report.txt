@@ -1,0 +1,6 @@
+EduAdapt AI - Evaluación Final
+========================================
+knn: Precision@5=0.7944, Recall@5=0.1740
+svd: Precision@5=0.5933, Recall@5=0.1434
+rf: Precision@5=0.6467, Recall@5=0.1592
+Mejor modelo: knn

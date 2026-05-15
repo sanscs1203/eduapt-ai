@@ -1,236 +1,727 @@
 /* ============================================================
    EduAdapt AI – register.js
-   Lógica de la página de registro con diagnóstico
+   Registro adaptativo con diagnóstico multitema
+   y Vector S pedagógico mejorado
    ============================================================ */
 
 import { registerWithEmail } from './auth.js';
+import { CONFIG } from './config.js';
 
 const regStep1 = document.getElementById('stepAccountForm');
 
-// Solo ejecutar si existe el formulario de registro
 if (regStep1) {
 
+  /* ============================================================
+     ESTADO GLOBAL DEL REGISTRO
+     ============================================================ */
   const regState = {
-    fullname: '', email: '', password: '',
-    selfLevel: null, preferences: [], studyTime: null, quizAnswers: []
+    fullname: '',
+    email: '',
+    password: '',
+    selfLevel: null,
+    preferences: [],
+    studyTime: null,
+    quizAnswers: []
   };
 
+  /* ============================================================
+     CONFIGURACIÓN PEDAGÓGICA
+     ============================================================ */
+
+  const LEARNING_RATE = 0.08;
+
+  const DEFAULT_TOPIC_STATE = {
+    mastery: 0.5,
+    confidence: 0.2,
+    attempts: 0,
+    correct: 0,
+    streak: 0,
+    last_interaction: null
+  };
+
+  /* ============================================================
+     BANCO DE PREGUNTAS
+     Cada pregunta ahora tiene:
+     - topic
+     - difficulty
+     - concept
+     ============================================================ */
+
   const QUIZ_QUESTIONS = [
-    { difficulty:1, question:'Resuelve para x: <code>2x + 6 = 14</code>',
-      options:['x = 2','x = 4','x = 6','x = 10'], correct:1 },
-    { difficulty:1, question:'Simplifica: <code>3a + 5a − 2a</code>',
-      options:['6a','7a','5a','10a'], correct:0 },
-    { difficulty:1, question:'Evalúa si <code>x = 3</code>: <code>x² − 2x + 1</code>',
-      options:['2','4','6','8'], correct:1 },
-    { difficulty:1, question:'Factoriza: <code>x² − 9</code>',
-      options:['(x−3)²','(x+3)(x−3)','(x−9)(x+1)','No se puede'], correct:1 },
-    { difficulty:2, question:'Resuelve: <code>x² − 5x + 6 = 0</code>',
-      options:['x=1, x=6','x=2, x=3','x=−2, x=−3','x=0, x=5'], correct:1 },
-    { difficulty:2, question:'Resuelve el sistema: <code>x + y = 7</code>, <code>x − y = 1</code>',
-      options:['x=3, y=4','x=4, y=3','x=5, y=2','x=2, y=5'], correct:1 },
-    { difficulty:2, question:'Simplifica: <code>(x² · x³) / x⁴</code>',
-      options:['x','x²','x⁵','1/x'], correct:0 },
-    { difficulty:2, question:'Racionaliza: <code>1 / √2</code>',
-      options:['√2','√2 / 2','2 / √2','1 / 2'], correct:1 }
+
+    // ÁLGEBRA
+    {
+      topic: 'algebra',
+      concept: 'ecuaciones_lineales',
+      difficulty: 1,
+      question: 'Resuelve para x: <code>2x + 6 = 14</code>',
+      options: ['x = 2', 'x = 4', 'x = 6', 'x = 10'],
+      correct: 1
+    },
+
+    {
+      topic: 'algebra',
+      concept: 'expresiones_algebraicas',
+      difficulty: 1,
+      question: 'Simplifica: <code>3a + 5a − 2a</code>',
+      options: ['6a', '7a', '5a', '10a'],
+      correct: 0
+    },
+
+    {
+      topic: 'funciones',
+      concept: 'evaluacion_funciones',
+      difficulty: 2,
+      question: 'Si <code>f(x) = 2x + 5</code>, ¿cuánto es <code>f(4)</code>?',
+      options: ['9', '11', '13', '15'],
+      correct: 2
+    },
+
+    // FACTORIZACIÓN
+    {
+      topic: 'polinomios',
+      concept: 'factorizacion',
+      difficulty: 2,
+      question: 'Factoriza: <code>x² − 9</code>',
+      options: [
+        '(x−3)²',
+        '(x+3)(x−3)',
+        '(x−9)(x+1)',
+        'No se puede'
+      ],
+      correct: 1
+    },
+
+    {
+      topic: 'polinomios',
+      concept: 'productos_notables',
+      difficulty: 2,
+      question: '¿Cuál es el resultado de <code>(x + 2)(x + 3)</code>?',
+      options: [
+        'x² + 5x + 6',
+        'x² + 6x + 5',
+        'x² + 5x + 5',
+        'x² + 6'
+      ],
+      correct: 0
+    },
+
+    // SISTEMAS
+    {
+      topic: 'sistemas',
+      concept: 'sistemas_lineales',
+      difficulty: 3,
+      question: 'Resuelve el sistema: <code>x + y = 5; x - y = 1</code>',
+      options: [
+        'x=2, y=3',
+        'x=3, y=2',
+        'x=4, y=1',
+        'x=1, y=4'
+      ],
+      correct: 1
+    },
+
+    // POTENCIAS
+    {
+      topic: 'potencias',
+      concept: 'leyes_exponentes',
+      difficulty: 3,
+      question: 'Simplifica: <code>(2x³y²)²</code>',
+      options: [
+        '4x⁶y⁴',
+        '2x⁶y⁴',
+        '4x⁵y⁴',
+        '4x⁶y²'
+      ],
+      correct: 0
+    },
+
+    // LOGARITMOS
+    {
+      topic: 'logaritmos',
+      concept: 'definicion_logaritmo',
+      difficulty: 3,
+      question: '¿Qué valor de x satisface <code>log₂(x) = 3</code>?',
+      options: [
+        'x = 6',
+        'x = 8',
+        'x = 9',
+        'x = 5'
+      ],
+      correct: 1
+    },
+
+    // ECUACIONES
+    {
+      topic: 'algebra',
+      concept: 'ecuaciones_lineales',
+      difficulty: 2,
+      question: 'Encuentra el valor de x en: <code>3(x - 2) = 12</code>',
+      options: ['x = 4', 'x = 6', 'x = 8', 'x = 2'],
+      correct: 1
+    },
+
+    // CUADRÁTICAS
+    {
+      topic: 'polinomios',
+      concept: 'cuadraticas',
+      difficulty: 2,
+      question: 'Evalúa si <code>x = 3</code>: <code>x² − 2x + 1</code>',
+      options: ['2', '4', '6', '8'],
+      correct: 1
+    }
   ];
 
-  function gotoStep(n) {
-    document.querySelectorAll('.register-step').forEach(p => p.classList.remove('active'));
-    const panel = document.querySelector(`[data-step-panel="${n}"]`);
-    if (panel) panel.classList.add('active');
-    document.querySelectorAll('.step-dot').forEach(d => {
-      const s = parseInt(d.dataset.step);
-      d.classList.remove('active','done');
-      if (s === n) d.classList.add('active');
-      else if (s < n) d.classList.add('done');
+  let currentQuizIdx = 0;
+
+  /* ============================================================
+     NAVEGACIÓN
+     ============================================================ */
+
+  window.gotoStep = function(step) {
+
+    document.querySelectorAll('.reg-step')
+      .forEach(s => s.classList.remove('active'));
+
+    document
+      .getElementById(`step${step}`)
+      .classList.add('active');
+
+    const dots = document.querySelectorAll('.step-dot');
+    const lines = document.querySelectorAll('.step-line');
+
+    dots.forEach((d, i) => {
+      if (i < step) d.classList.add('active');
+      if (i < step - 1 && lines[i]) {
+        lines[i].classList.add('active');
+      }
     });
-    document.querySelectorAll('.step-line').forEach((l, i) => l.classList.toggle('done', i+1 < n));
-    document.querySelectorAll('.step-label').forEach((l, i) => l.classList.toggle('active', i+1 === n));
-  }
 
-  regStep1.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const fullname = document.getElementById('regFullname').value.trim();
-    const email    = document.getElementById('regEmail').value.trim();
-    const password = document.getElementById('regPassword').value;
-    const errBox   = document.getElementById('accountError');
-    const errText  = document.getElementById('accountErrorText');
-    errBox.classList.remove('visible');
+    if (step === 3) startQuiz();
+    if (step === 4) renderSummary();
+  };
 
-    if (!fullname || !email || !password) { errText.textContent='Completa todos los campos'; errBox.classList.add('visible'); return; }
-    if (password.length < 6)             { errText.textContent='Contraseña mínimo 6 caracteres'; errBox.classList.add('visible'); return; }
-    if (!/^\S+@\S+\.\S+$/.test(email))  { errText.textContent='Correo no válido'; errBox.classList.add('visible'); return; }
+  /* ============================================================
+     PASO 1 — CUENTA
+     ============================================================ */
 
-    regState.fullname = fullname;
-    regState.email    = email;
-    regState.password = password;
-    gotoStep(2);
-  });
+  const accountForm = document.getElementById('accountForm');
 
-  document.querySelectorAll('.level-card').forEach(card => {
-    card.addEventListener('click', () => {
-      document.querySelectorAll('.level-card').forEach(c => c.classList.remove('selected'));
-      card.classList.add('selected');
-      regState.selfLevel = card.dataset.level;
-      document.getElementById('next2').disabled = false;
-    });
-  });
-  document.getElementById('back2').addEventListener('click', () => gotoStep(1));
-  document.getElementById('next2').addEventListener('click', () => { if (regState.selfLevel) gotoStep(3); });
+  if (accountForm) {
 
-  function checkStep3() {
-    const hasPrefs = document.querySelectorAll('.pref-check:checked').length > 0;
-    const hasTime  = document.querySelector('input[name="time"]:checked') !== null;
-    document.getElementById('next3').disabled = !(hasPrefs && hasTime);
-  }
-  document.querySelectorAll('.pref-check').forEach(c => c.addEventListener('change', checkStep3));
-  document.querySelectorAll('input[name="time"]').forEach(r => r.addEventListener('change', checkStep3));
-  document.getElementById('back3').addEventListener('click', () => gotoStep(2));
-  document.getElementById('next3').addEventListener('click', () => {
-    regState.preferences = Array.from(document.querySelectorAll('.pref-check:checked')).map(c => c.value);
-    regState.studyTime   = document.querySelector('input[name="time"]:checked').value;
-    renderQuiz();
-    gotoStep(4);
-  });
+    accountForm.addEventListener('submit', (e) => {
 
-  function renderQuiz() {
-    regState.quizAnswers = Array(QUIZ_QUESTIONS.length).fill(null);
-    showQuizQuestion(0);
-  }
+      e.preventDefault();
 
-  let currentQuiz = 0;
-  function showQuizQuestion(idx) {
-    currentQuiz = idx;
-    const q = QUIZ_QUESTIONS[idx];
-    const container = document.getElementById('quizContainer');
-    container.innerHTML = `<div class="quiz-question">${q.question}</div><div class="quiz-options" id="quizOpts"></div>`;
-    const opts = document.getElementById('quizOpts');
-    q.options.forEach((opt, i) => {
-      const div = document.createElement('div');
-      div.className = 'quiz-option';
-      div.textContent = opt;
-      if (regState.quizAnswers[idx] === i) div.classList.add('selected');
-      div.addEventListener('click', () => {
-        opts.querySelectorAll('.quiz-option').forEach(o => o.classList.remove('selected'));
-        div.classList.add('selected');
-        regState.quizAnswers[idx] = i;
-        setTimeout(() => {
-          if (idx < QUIZ_QUESTIONS.length - 1) {
-            showQuizQuestion(idx + 1);
-            updateQuizProgress(idx + 1);
-          } else {
-            updateQuizProgress(QUIZ_QUESTIONS.length);
-            document.getElementById('submitQuiz').disabled = false;
-          }
-        }, 250);
-      });
-      opts.appendChild(div);
+      regState.fullname =
+        document.getElementById('regFullname').value;
+
+      regState.email =
+        document.getElementById('regEmail').value;
+
+      regState.password =
+        document.getElementById('regPassword').value;
+
+      gotoStep(2);
     });
   }
 
-  function updateQuizProgress(answeredCount) {
-    document.getElementById('quizCounter').textContent =
-      `Pregunta ${Math.min(answeredCount+1, QUIZ_QUESTIONS.length)} / ${QUIZ_QUESTIONS.length}`;
-    document.getElementById('quizBarFill').style.width =
-      Math.max(12.5, (answeredCount/QUIZ_QUESTIONS.length)*100) + '%';
-  }
+  /* ============================================================
+     PASO 2 — PERFIL
+     ============================================================ */
 
-  document.getElementById('back4').addEventListener('click', () => gotoStep(3));
+  window.setSelfLevel = function(level) {
 
-  function computeStudentState(r) {
-    let correct = 0;
-    r.quizAnswers.forEach((ans, i) => { if (ans === QUIZ_QUESTIONS[i].correct) correct++; });
-    const a = correct / QUIZ_QUESTIONS.length;
-    const selfMap = { low:0.3, mid:0.6, high:0.9 };
-    const d = +(0.4 * selfMap[r.selfLevel] + 0.6 * a).toFixed(2);
-    return { a:+a.toFixed(2), t:0.5, f:0.5, d };
-  }
+    regState.selfLevel = level;
 
-  document.getElementById('submitQuiz').addEventListener('click', async () => {
-    const btn = document.getElementById('submitQuiz');
-    // Limpiar mensaje de error anterior
-    const errorDiv = document.getElementById('submitError');
-    if (errorDiv) {
-      errorDiv.classList.remove('visible');
-      errorDiv.innerHTML = '';
+    document.querySelectorAll('.level-card')
+      .forEach(c => c.classList.remove('selected'));
+
+    event.currentTarget.classList.add('selected');
+  };
+
+  window.togglePref = function(pref) {
+
+    const idx = regState.preferences.indexOf(pref);
+
+    if (idx > -1) {
+      regState.preferences.splice(idx, 1);
+    } else {
+      regState.preferences.push(pref);
     }
 
-    btn.classList.add('loading');
-    btn.disabled = true;
+    event.currentTarget.classList.toggle('selected');
+  };
+
+  /* ============================================================
+     PASO 3 — QUIZ DIAGNÓSTICO
+     ============================================================ */
+
+  function startQuiz() {
+
+    currentQuizIdx = 0;
+    regState.quizAnswers = [];
+
+    showQuestion();
+  }
+
+  function showQuestion() {
+
+    const q = QUIZ_QUESTIONS[currentQuizIdx];
+
+    const container =
+      document.getElementById('quizContainer');
+
+    container.innerHTML = `
+      <div class="quiz-q">
+
+        <p class="quiz-num">
+          Pregunta ${currentQuizIdx + 1}
+          de ${QUIZ_QUESTIONS.length}
+        </p>
+
+        <div class="quiz-topic">
+          Tema: ${q.topic}
+        </div>
+
+        <h3>${q.question}</h3>
+
+        <div class="quiz-options">
+          ${q.options.map((opt, i) => `
+            <button
+              class="opt-btn"
+              onclick="selectOption(${i})"
+            >
+              ${opt}
+            </button>
+          `).join('')}
+        </div>
+
+      </div>
+    `;
+
+    const progress =
+      (currentQuizIdx / QUIZ_QUESTIONS.length) * 100;
+
+    document.getElementById('quizProgress')
+      .style.width = `${progress}%`;
+  }
+
+  window.selectOption = function(idx) {
+
+    const q = QUIZ_QUESTIONS[currentQuizIdx];
+
+    regState.quizAnswers.push({
+
+      questionIdx: currentQuizIdx,
+
+      topic: q.topic,
+
+      concept: q.concept,
+
+      difficulty: q.difficulty,
+
+      selected: idx,
+
+      isCorrect: idx === q.correct,
+
+      timestamp: new Date().toISOString()
+    });
+
+    currentQuizIdx++;
+
+    if (currentQuizIdx < QUIZ_QUESTIONS.length) {
+      showQuestion();
+    } else {
+      gotoStep(4);
+    }
+  };
+
+  /* ============================================================
+     MOTOR PEDAGÓGICO
+     ============================================================ */
+
+  function clamp(value, min = 0, max = 1) {
+    return Math.max(min, Math.min(max, value));
+  }
+
+  function createInitialTopicState(baseMastery = 0.5) {
+
+    return {
+      ...DEFAULT_TOPIC_STATE,
+      mastery: baseMastery
+    };
+  }
+
+  function computeTopicMastery(topicAnswers) {
+
+    if (!topicAnswers.length) {
+      return createInitialTopicState(0.5);
+    }
+
+    let mastery = 0.5;
+    let streak = 0;
+    let correctCount = 0;
+
+    topicAnswers.forEach(answer => {
+
+      const weight =
+        LEARNING_RATE * answer.difficulty;
+
+      if (answer.isCorrect) {
+
+        mastery += weight;
+
+        correctCount++;
+
+        streak = streak >= 0
+          ? streak + 1
+          : 1;
+
+      } else {
+
+        mastery -= weight;
+
+        streak = streak <= 0
+          ? streak - 1
+          : -1;
+      }
+    });
+
+    mastery = clamp(mastery);
+
+    const confidence =
+      clamp(topicAnswers.length / 10);
+
+    return {
+
+      mastery,
+
+      confidence,
+
+      attempts: topicAnswers.length,
+
+      correct: correctCount,
+
+      streak,
+
+      last_interaction:
+        new Date().toISOString()
+    };
+  }
+
+  function buildVectorS() {
+
+    const groupedByTopic = {};
+
+    CONFIG.TOPICS.forEach(topic => {
+      groupedByTopic[topic] = [];
+    });
+
+    regState.quizAnswers.forEach(answer => {
+
+      if (!groupedByTopic[answer.topic]) {
+        groupedByTopic[answer.topic] = [];
+      }
+
+      groupedByTopic[answer.topic].push(answer);
+    });
+
+    const a_temas = {};
+
+    let masterySum = 0;
+    let topicCount = 0;
+
+    Object.keys(groupedByTopic).forEach(topic => {
+
+      const state =
+        computeTopicMastery(groupedByTopic[topic]);
+
+      a_temas[topic] = state;
+
+      masterySum += state.mastery;
+      topicCount++;
+    });
+
+    const globalMastery =
+      topicCount > 0
+        ? masterySum / topicCount
+        : 0.5;
+
+    return {
+
+      a_temas,
+
+      d_global: clamp(globalMastery),
+
+      profile: {
+
+        estimated_level:
+          globalMastery >= 0.8
+            ? 'advanced'
+            : globalMastery >= 0.6
+              ? 'intermediate'
+              : 'basic',
+
+        learning_velocity:
+          globalMastery >= 0.75
+            ? 'fast'
+            : globalMastery >= 0.45
+              ? 'normal'
+              : 'slow'
+      },
+
+      metadata: {
+
+        diagnostic_version: 'v2',
+
+        initial_diag_score: globalMastery,
+
+        self_reported_level:
+          regState.selfLevel || 'medium',
+
+        total_questions:
+          QUIZ_QUESTIONS.length,
+
+        completed_at:
+          new Date().toISOString()
+      }
+    };
+  }
+
+  /* ============================================================
+     PASO 4 — RESUMEN
+     ============================================================ */
+
+  function renderSummary() {
+
+    const correct =
+      regState.quizAnswers
+        .filter(a => a.isCorrect).length;
+
+    const score =
+      (correct / QUIZ_QUESTIONS.length) * 100;
+
+    document.getElementById('summaryName')
+      .textContent = regState.fullname;
+
+    document.getElementById('summaryScore')
+      .textContent = `${score.toFixed(0)}%`;
+
+    const levelText =
+      score >= 85
+        ? 'Avanzado'
+        : score >= 60
+          ? 'Intermedio'
+          : 'Básico';
+
+    document.getElementById('summaryLevel')
+      .textContent = levelText;
+  }
+
+  /* ============================================================
+     FINALIZACIÓN DEL REGISTRO
+     ============================================================ */
+
+  async function finalizeRegistration() {
+
+    const btn =
+      document.getElementById('btnFinishRegister');
+
+    const errDiv =
+      document.getElementById('submitError');
+
+    if (btn) {
+      btn.classList.add('loading');
+      btn.disabled = true;
+    }
+
+    if (errDiv) {
+      errDiv.classList.remove('visible');
+    }
 
     try {
-      const S = computeStudentState(regState);
-      const user = await registerWithEmail(regState.email, regState.password);
-      const uid = user.uid;
 
-      const userDoc = {
-        uid, fullname:regState.fullname, email:regState.email,
-        selfLevel:regState.selfLevel, preferences:regState.preferences,
-        studyTime:regState.studyTime, quizAnswers:regState.quizAnswers,
-        quizCorrect: regState.quizAnswers.filter((a,i)=>a===QUIZ_QUESTIONS[i].correct).length,
-        quizTotal: QUIZ_QUESTIONS.length,
-        S, createdAt: window.fbHelpers.serverTimestamp(),
-      };
-      await window.fbHelpers.setDoc(window.fbHelpers.doc(window.fbDb,'users',uid), userDoc);
+      /* ========================================================
+         1. REGISTRO AUTH
+         ======================================================== */
 
-      sessionStorage.setItem('edu_logged','1');
-      sessionStorage.setItem('edu_user', regState.fullname);
-      sessionStorage.setItem('edu_email', regState.email);
-      sessionStorage.setItem('edu_uid', uid);
-      sessionStorage.setItem('edu_S', JSON.stringify({ ...S, selfLevel: regState.selfLevel }));
+      const user = await registerWithEmail(
+        regState.email,
+        regState.password
+      );
 
-      const correct = regState.quizAnswers.filter((a,i)=>a===QUIZ_QUESTIONS[i].correct).length;
-      const total = QUIZ_QUESTIONS.length;
-      let levelCat, levelClass;
-      if (S.d >= 0.7)       { levelCat='Avanzado';   levelClass='high'; }
-      else if (S.d >= 0.45) { levelCat='Intermedio'; levelClass='mid';  }
-      else                  { levelCat='Básico';     levelClass='low';  }
+      /* ========================================================
+         2. CONSTRUIR VECTOR S
+         ======================================================== */
 
-      const prefLabels = { formulas:'Fórmulas', text:'Texto', video:'Videos', exercises:'Ejercicios', examples:'Ejemplos' };
-      const timeLabels = { 'lt2':'< 2 h/semana', '2-5':'2–5 h/semana', '5-10':'5–10 h/semana', 'gt10':'> 10 h/semana' };
+      const vectorS = buildVectorS();
 
-      document.getElementById('stateSummary').innerHTML = `
-        <div class="state-row"><span class="state-key">Quiz diagnóstico</span><span class="state-value">${correct} / ${total}</span></div>
-        <div class="state-row"><span class="state-key">Nivel detectado</span><span class="state-value ${levelClass}">${levelCat}</span></div>
-        <div class="state-row"><span class="state-key">S = [a, t, f, d]</span><span class="state-value">[${S.a}, ${S.t}, ${S.f}, ${S.d}]</span></div>
-        <div class="state-row"><span class="state-key">Preferencias</span><span class="state-value" style="font-size:0.8rem">${regState.preferences.map(p=>prefLabels[p]).join(', ')}</span></div>
-        <div class="state-row"><span class="state-key">Tiempo disponible</span><span class="state-value" style="font-size:0.8rem">${timeLabels[regState.studyTime]}</span></div>
-        <div class="state-row"><span class="state-key">Almacenamiento</span><span class="state-value high" style="font-size:0.8rem">✓ Guardado en Firebase</span></div>
-      `;
+      /* ========================================================
+         3. GUARDAR FIRESTORE
+         ======================================================== */
+
+      const userRef = window.fbHelpers.doc(
+        window.fbDb,
+        'users',
+        user.uid
+      );
+
+      await window.fbHelpers.setDoc(userRef, {
+
+        fullname: regState.fullname,
+
+        email: regState.email,
+
+        selfLevel: regState.selfLevel,
+
+        preferences: regState.preferences,
+
+        S: vectorS,
+
+        diagnosticAnswers: regState.quizAnswers,
+
+        createdAt:
+          window.fbHelpers.serverTimestamp()
+      });
+
+      /* ========================================================
+         4. SESIÓN LOCAL
+         ======================================================== */
+
+      sessionStorage.setItem('edu_logged', '1');
+
+      sessionStorage.setItem(
+        'edu_user',
+        regState.fullname
+      );
+
+      sessionStorage.setItem(
+        'edu_uid',
+        user.uid
+      );
+
+      sessionStorage.setItem(
+        'edu_S',
+        JSON.stringify(vectorS)
+      );
+
+      /* ========================================================
+         5. UI FINAL
+         ======================================================== */
+
+      const avgMastery =
+        (vectorS.d_global * 100).toFixed(0);
+
+      const weakTopics = Object.entries(
+        vectorS.a_temas
+      )
+      .filter(([_, v]) => v.mastery < 0.45)
+      .map(([k]) => k);
+
+      const infoFinal =
+        document.getElementById('infoFinal');
+
+      if (infoFinal) {
+
+        infoFinal.innerHTML = `
+
+          <div class="state-row">
+            <span class="state-key">Usuario</span>
+            <span class="state-value">
+              ${regState.fullname}
+            </span>
+          </div>
+
+          <div class="state-row">
+            <span class="state-key">
+              Dominio Global
+            </span>
+            <span class="state-value">
+              ${avgMastery}%
+            </span>
+          </div>
+
+          <div class="state-row">
+            <span class="state-key">
+              Nivel Detectado
+            </span>
+            <span class="state-value">
+              ${vectorS.profile.estimated_level}
+            </span>
+          </div>
+
+          <div class="state-row">
+            <span class="state-key">
+              Temas Analizados
+            </span>
+            <span class="state-value">
+              ${Object.keys(vectorS.a_temas).length}
+            </span>
+          </div>
+
+          <div class="state-row">
+            <span class="state-key">
+              Temas Débiles
+            </span>
+            <span class="state-value">
+              ${weakTopics.length
+                ? weakTopics.join(', ')
+                : 'Ninguno'}
+            </span>
+          </div>
+
+          <div class="state-row">
+            <span class="state-key">
+              Firebase
+            </span>
+
+            <span
+              class="state-value high"
+              style="font-size:0.8rem"
+            >
+              ✓ Persistido
+            </span>
+          </div>
+        `;
+      }
 
       gotoStep(5);
-      document.querySelectorAll('.step-dot').forEach(d => d.classList.add('done'));
-      document.querySelectorAll('.step-line').forEach(l => l.classList.add('done'));
+
+      document.querySelectorAll('.step-dot')
+        .forEach(d => d.classList.add('done'));
+
+      document.querySelectorAll('.step-line')
+        .forEach(l => l.classList.add('done'));
 
     } catch (error) {
+
       console.error('[Register] Error:', error);
 
-      // Restaurar el botón
-      btn.classList.remove('loading');
-      btn.disabled = false;
-
-      // Mensaje amigable según el código de error
-      let mensaje = 'Ocurrió un error inesperado. Intenta de nuevo.';
-      if (error && error.code === 'auth/email-already-in-use') {
-        mensaje = 'Este correo ya está registrado. <a href="login.html" style="color:#3B82F6;text-decoration:underline;">Inicia sesión aquí</a>.';
-      } else if (error && error.message) {
-        mensaje = error.message;
+      if (btn) {
+        btn.classList.remove('loading');
+        btn.disabled = false;
       }
 
-      // Mostrar el error en el div de error del paso 4
-      const errDiv = document.getElementById('submitError');
+      let mensaje =
+        'Ocurrió un error inesperado.';
+
+      if (
+        error &&
+        error.code === 'auth/email-already-in-use'
+      ) {
+        mensaje =
+          'Este correo ya está registrado.';
+      }
+
       if (errDiv) {
+
         errDiv.innerHTML = mensaje;
+
         errDiv.classList.add('visible');
-      } else {
-        // Si no existe (por si acaso), usar alert
-        alert(mensaje.replace(/<[^>]*>/g, ''));
       }
     }
-  });
+  }
 
-  document.getElementById('goToApp').addEventListener('click', () => {
-    window.location.href = 'index.html';
-  });
-
-} // fin del if (regStep1)
+  window.finalizeRegistration = finalizeRegistration;
+}

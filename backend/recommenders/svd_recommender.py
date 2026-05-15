@@ -1,58 +1,59 @@
-# backend/recommenders/svd_recommender.py
-import numpy as np
-from sklearn.decomposition import TruncatedSVD
+from surprise import SVD, Reader, Dataset, dump
 from .base_recommender import BaseRecommender
+import pandas as pd
 
 class SVDRecommender(BaseRecommender):
-    def __init__(self, n_factors=50):
-        self.n_factors = n_factors
-        self.model = TruncatedSVD(n_components=n_factors)
-        self.user_map = {}
-        self.item_map = {}
-        self.reverse_item_map = {}
-        self.matrix = None
+    def __init__(self):
+        self.model = None
 
+    # En random_forest_rec.py
     def fit(self, interactions):
-        # Construir matriz usuario-ítem (ratings)
-        users = []
-        items = []
-        ratings = []
-        for inter in interactions:
-            uid = inter.get('uid')
-            qid = inter.get('question_id')
-            if not uid or not qid:
-                continue
-            if uid not in self.user_map:
-                self.user_map[uid] = len(self.user_map)
-            if qid not in self.item_map:
-                self.item_map[qid] = len(self.item_map)
-            users.append(self.user_map[uid])
-            items.append(self.item_map[qid])
-            ratings.append(1.0 if inter.get('correct', False) else 0.0)
+        df = pd.DataFrame(interactions)
+        if df.empty: return
+        
+        # Asegurar que el target sea 'util' si existe, si no, 'correct'
+        target_col = 'util' if 'util' in df.columns else 'correct'
+        
+        df['topic_enc'] = self.le_topic.fit_transform(df['topic'])
+        df['difficulty_enc'] = df['difficulty'].map(self.difficulty_order).fillna(1).astype(int)
+        
+        # Usar S_before para predecir, no S_after (el modelo debe predecir con el estado previo)
+        S_vals = np.array(df['S_before'].apply(lambda s: [s['a'], s['t'], s['f'], s['d']]).tolist())
+        df['S_a'], df['S_t'], df['S_f'], df['S_d'] = S_vals.T
+        
+        self.clf.fit(df[self.feature_cols], df[target_col]) # <--- Cambio aquí
+        self.trained = True
 
-        if not users:
-            return
-
-        n_users = len(self.user_map)
-        n_items = len(self.item_map)
-        self.matrix = np.zeros((n_users, n_items))
-        for u, i, r in zip(users, items, ratings):
-            self.matrix[u, i] = r
-
-        self.model.fit(self.matrix)
-        self.reverse_item_map = {v: k for k, v in self.item_map.items()}
-
-    def recommend(self, user_id, topic, S, n=3):
-        if user_id not in self.user_map or self.matrix is None:
+    def recommend(self, user_id, topic_filter, questions_df, top_n=5, exclude_items=None,
+                  user_prefs=None, qid_to_format=None):
+        if self.model is None:
             return []
-        user_idx = self.user_map[user_id]
-        reconstructed = self.model.inverse_transform(self.model.transform(self.matrix))
-        user_row = reconstructed[user_idx]
-        # Ordenar ítems por rating predicho descendente
-        item_indices = np.argsort(user_row)[::-1]
-        recommended_ids = []
-        for idx in item_indices:
-            qid = self.reverse_item_map.get(idx)
-            if qid and len(recommended_ids) < n:
-                recommended_ids.append(qid)
-        return recommended_ids
+        exclude_items = exclude_items or set()
+
+        diff_order = {'Easy': 0.3, 'Medium': 0.6, 'Hard': 0.9}
+        qid_to_diff = dict(zip(questions_df['id'], questions_df['difficulty'].map(diff_order).fillna(0.6)))
+
+        topic_qids = questions_df[questions_df['topic'] == topic_filter]['id'].tolist()
+        candidates = []
+        for qid in topic_qids:
+            if qid in exclude_items:
+                continue
+            est = self.model.predict(str(user_id), str(qid)).est
+
+            pref_bonus = 0.0
+            if user_prefs is not None and qid_to_format is not None:
+                fmt = qid_to_format.get(qid, '')
+                if any(pref in fmt for pref in user_prefs):
+                    pref_bonus = 0.1
+
+            final_score = est + pref_bonus
+            candidates.append((qid, final_score))
+
+        candidates.sort(key=lambda x: x[1], reverse=True)
+        return [qid for qid, _ in candidates[:top_n]]
+
+    def save(self, path):
+        dump.dump(path, algo=self.model)
+
+    def load(self, path):
+        _, self.model = dump.load(path)
