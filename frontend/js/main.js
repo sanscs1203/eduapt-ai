@@ -1,171 +1,594 @@
 /* ============================================================
    EduAdapt AI – main.js
-   Inicialización de la app principal
+   Inicialización principal
+   Compatible con Vector S multitema
    ============================================================ */
 
 import { CONFIG } from './config.js';
 import { logout } from './auth.js';
+import { recoverPendingSession } from './session.js';
 
-// Solo ejecutar si existe el contenedor principal del chat (index.html)
+// ============================================================
+// Solo ejecutar en index.html
+// ============================================================
+
 if (document.getElementById('messagesWrap')) {
 
-  window.pilotMode = CONFIG.DEFAULT_MODE;
+  // ==========================================================
+  // Protección login
+  // ==========================================================
 
   if (!sessionStorage.getItem('edu_logged')) {
+
     window.location.href = 'login.html';
+
   } else {
 
-    // Restaurar S
-    const storedSRaw = sessionStorage.getItem('edu_S');
+    // ========================================================
+    // Restaurar Vector S
+    // ========================================================
+
+    const storedSRaw =
+      sessionStorage.getItem('edu_S');
+
     if (storedSRaw) {
-      try { window.studentS = JSON.parse(storedSRaw); } catch(e) {}
+
+      try {
+
+        window.studentS =
+          JSON.parse(storedSRaw);
+
+      } catch (e) {
+
+        console.error(
+          '[main.js] Error parsing S',
+          e
+        );
+      }
     }
 
-    const storedName = sessionStorage.getItem('edu_user') || 'Estudiante';
-    document.getElementById('userName').textContent = storedName;
-    document.getElementById('welcomeName').textContent = storedName.split(' ')[0];
-    document.getElementById('userAvatar').textContent = window.getInitial(storedName);
+    // ========================================================
+    // Inicializar modo piloto
+    // Basado en perfil real
+    // ========================================================
+
+    if (
+      window.studentS &&
+      window.studentS.d_global >= 0.65
+    ) {
+
+      window.pilotMode = 'adaptive';
+
+    } else {
+
+      window.pilotMode = 'baseline';
+    }
+
+    // ========================================================
+    // Usuario UI
+    // ========================================================
+
+    const storedName =
+      sessionStorage.getItem('edu_user')
+      || 'Estudiante';
+
+    document.getElementById('userName')
+      .textContent = storedName;
+
+    document.getElementById('welcomeName')
+      .textContent =
+        storedName.split(' ')[0];
+
+    document.getElementById('userAvatar')
+      .textContent =
+        window.getInitial(storedName);
+
+    // ========================================================
+    // ACTUALIZAR PANEL DE ESTADO
+    // ========================================================
+
+    window.updateStatePanelUI = function () {
+
+      if (!window.studentS) return;
+
+      const S = window.studentS;
+
+      const topics =
+        Object.entries(S.a_temas || {});
+
+      if (!topics.length) return;
+
+      // ======================================================
+      // Promedio global
+      // ======================================================
+
+      const avg =
+        topics.reduce((acc, [_, topic]) => {
+
+          return acc + (topic.mastery || 0);
+
+        }, 0) / topics.length;
+
+      // ======================================================
+      // Tema fuerte
+      // ======================================================
+
+      const strongest =
+        [...topics].sort(
+          (a, b) =>
+            b[1].mastery - a[1].mastery
+        )[0];
+
+      // ======================================================
+      // Tema débil
+      // ======================================================
+
+      const weakest =
+        [...topics].sort(
+          (a, b) =>
+            a[1].mastery - b[1].mastery
+        )[0];
+
+      // ======================================================
+      // Nivel global
+      // ======================================================
+
+      const masteryPercent =
+        Math.round(avg * 100);
+
+      const level =
+        avg >= 0.8
+          ? 'Avanzado'
+          : avg >= 0.6
+            ? 'Intermedio'
+            : 'Básico';
+
+      // ======================================================
+      // UI Elements
+      // ======================================================
+
+      const levelEl =
+        document.getElementById('stateLevel');
+
+      if (levelEl) {
+
+        levelEl.textContent =
+          `${masteryPercent}% • ${level}`;
+      }
+
+      const strongEl =
+        document.getElementById('strongTopic');
+
+      if (strongEl && strongest) {
+
+        strongEl.textContent =
+          CONFIG.TOPIC_LABELS[
+            strongest[0]
+          ] || strongest[0];
+      }
+
+      const weakEl =
+        document.getElementById('weakTopic');
+
+      if (weakEl && weakest) {
+
+        weakEl.textContent =
+          CONFIG.TOPIC_LABELS[
+            weakest[0]
+          ] || weakest[0];
+      }
+
+      const diffEl =
+        document.getElementById(
+          'adaptiveDifficulty'
+        );
+
+      if (diffEl) {
+
+        diffEl.textContent =
+          `${Math.round(
+            S.d_global * 100
+          )}%`;
+      }
+    };
+
+    // Ejecutar panel
     window.updateStatePanelUI();
 
-    // Eventos de chips de tópicos
-    document.querySelectorAll('.topic-chip').forEach(chip => {
-      chip.addEventListener('click', async () => {
-        const topic = chip.getAttribute('data-topic');
-        if (!topic) return;
-        if (window.currentTopic && window.currentTopic !== topic) await window.closeSession(true);
-        window.showChatArea();
-        window.appendMessage(`Quiero practicar: **${CONFIG.TOPIC_LABELS[topic]}**`, 'user');
-        window.showTyping();
-        const q = await window.startSession(topic);
-        window.removeTyping();
-        if (q) {
-          window.appendMessage(`¡Vamos con **${CONFIG.TOPIC_LABELS[topic]}**! 🎯`, 'bot');
-          window.pendingQuestion = q;
-          window.pendingQuestion.deliveredAt = Date.now();
-          window.appendMessage(`**${q.question}**`, 'bot');
-        }
-      });
-    });
+    // ========================================================
+    // TOPIC CHIPS
+    // ========================================================
 
-    // Eventos de historial (sidebar)
-    document.querySelectorAll('.history-item').forEach(item => {
-      item.addEventListener('click', async () => {
-        document.querySelectorAll('.history-item').forEach(i => i.classList.remove('active'));
-        item.classList.add('active');
-        const topic = item.getAttribute('data-topic');
-        if (!topic) return;
-        if (window.currentTopic && window.currentTopic !== topic) await window.closeSession(true);
-        document.getElementById('chatMessages').innerHTML = '';
-        window.chatVisible = false;
-        window.showChatArea();
-        document.getElementById('topbarSubject').innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg> ${CONFIG.TOPIC_LABELS[topic]}`;
-        window.appendMessage(`Comenzamos con **${CONFIG.TOPIC_LABELS[topic]}**.`, 'bot');
-        window.showTyping();
-        const q = await window.startSession(topic);
-        window.removeTyping();
-        if (q) {
-          window.pendingQuestion = q;
-          window.pendingQuestion.deliveredAt = Date.now();
-          window.appendMessage(`**${q.question}**`, 'bot');
-        }
-        closeSidebar();
-      });
-    });
+    document.querySelectorAll('.topic-chip')
+      .forEach(chip => {
 
-    // Input de chat
-    const msgInput = document.getElementById('msgInput');
-    const sendBtn = document.getElementById('sendBtn');
+        chip.addEventListener(
+          'click',
+          async () => {
+
+            const topic =
+              chip.getAttribute(
+                'data-topic'
+              );
+
+            if (!topic) return;
+
+            // Validación consistencia
+            if (
+              !window.studentS?.a_temas?.[topic]
+            ) {
+
+              console.warn(
+                `[Topic Missing] ${topic}`
+              );
+            }
+
+            if (
+              window.currentTopic &&
+              window.currentTopic !== topic
+            ) {
+
+              await window.closeSession(true);
+            }
+
+            window.showChatArea();
+
+            window.appendMessage(
+              `Quiero practicar: **${CONFIG.TOPIC_LABELS[topic]}**`,
+              'user'
+            );
+
+            window.showTyping();
+
+            // ==================================================
+            // START SESSION
+            // ==================================================
+
+            const q =
+              await window.startSession(
+                topic,
+                window.studentS
+              );
+
+            window.removeTyping();
+
+            if (q) {
+
+              window.appendMessage(
+                `¡Vamos con **${CONFIG.TOPIC_LABELS[topic]}**! 🎯`,
+                'bot'
+              );
+
+              window.pendingQuestion = q;
+
+              window.pendingQuestion.deliveredAt =
+                Date.now();
+
+              window.appendMessage(
+                `**${q.question}**`,
+                'bot'
+              );
+            }
+          }
+        );
+      });
+
+    // ========================================================
+    // HISTORIAL
+    // ========================================================
+
+    document.querySelectorAll('.history-item')
+      .forEach(item => {
+
+        item.addEventListener(
+          'click',
+          async () => {
+
+            document
+              .querySelectorAll('.history-item')
+              .forEach(i =>
+                i.classList.remove('active')
+              );
+
+            item.classList.add('active');
+
+            const topic =
+              item.getAttribute(
+                'data-topic'
+              );
+
+            if (!topic) return;
+
+            if (
+              window.currentTopic &&
+              window.currentTopic !== topic
+            ) {
+
+              await window.closeSession(true);
+            }
+
+            document.getElementById(
+              'chatMessages'
+            ).innerHTML = '';
+
+            window.chatVisible = false;
+
+            window.showChatArea();
+
+            document.getElementById(
+              'topbarSubject'
+            ).innerHTML = `
+              <svg width="14" height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2">
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+              </svg>
+
+              ${CONFIG.TOPIC_LABELS[topic]}
+            `;
+
+            window.appendMessage(
+              `Comenzamos con **${CONFIG.TOPIC_LABELS[topic]}**.`,
+              'bot'
+            );
+
+            window.showTyping();
+
+            const q =
+              await window.startSession(
+                topic,
+                window.studentS
+              );
+
+            window.removeTyping();
+
+            if (q) {
+
+              window.pendingQuestion = q;
+
+              window.pendingQuestion.deliveredAt =
+                Date.now();
+
+              window.appendMessage(
+                `**${q.question}**`,
+                'bot'
+              );
+            }
+
+            closeSidebar();
+          }
+        );
+      });
+
+    // ========================================================
+    // INPUT CHAT
+    // ========================================================
+
+    const msgInput =
+      document.getElementById('msgInput');
+
+    const sendBtn =
+      document.getElementById('sendBtn');
+
     msgInput.addEventListener('input', () => {
-      sendBtn.disabled = msgInput.value.trim() === '';
+
+      sendBtn.disabled =
+        msgInput.value.trim() === '';
+
       msgInput.style.height = 'auto';
-      msgInput.style.height = Math.min(msgInput.scrollHeight, 160) + 'px';
+
+      msgInput.style.height =
+        Math.min(
+          msgInput.scrollHeight,
+          160
+        ) + 'px';
     });
-    msgInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        if (!sendBtn.disabled) window.handleMessage(msgInput.value.trim());
+
+    msgInput.addEventListener(
+      'keydown',
+      (e) => {
+
+        if (
+          e.key === 'Enter' &&
+          !e.shiftKey
+        ) {
+
+          e.preventDefault();
+
+          if (!sendBtn.disabled) {
+
+            window.handleMessage(
+              msgInput.value.trim()
+            );
+          }
+        }
+      }
+    );
+
+    sendBtn.addEventListener('click', () => {
+
+      if (!sendBtn.disabled) {
+
+        window.handleMessage(
+          msgInput.value.trim()
+        );
       }
     });
-    sendBtn.addEventListener('click', () => {
-      if (!sendBtn.disabled) window.handleMessage(msgInput.value.trim());
-    });
 
-    // Nuevo chat
-    document.getElementById('newChatBtn').addEventListener('click', async () => {
-      await window.closeSession(true);
-      document.getElementById('chatMessages').innerHTML = '';
-      document.getElementById('welcomeScreen').style.display = '';
-      window.chatVisible = false;
-      window.pendingQuestion = null;
-      window.currentTopic = null;
-      document.getElementById('topbarSubject').innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg> Álgebra`;
-      closeSidebar();
-    });
+    // ========================================================
+    // NUEVO CHAT
+    // ========================================================
 
-    // Logout
-    document.getElementById('logoutBtn').addEventListener('click', async () => {
-      await window.closeSession(false);
-      await logout();
-      window.location.href = 'login.html';
-    });
+    document.getElementById('newChatBtn')
+      .addEventListener('click', async () => {
 
-    // Sidebar
-    const menuToggle = document.getElementById('menuToggle');
-    const sidebar = document.getElementById('sidebar');
-    const sidebarClose = document.getElementById('sidebarClose');
-    const sidebarOverlay = document.getElementById('sidebarOverlay');
+        await window.closeSession(true);
 
-    function openSidebar()  { sidebar.classList.add('open'); sidebarOverlay.classList.add('open'); document.body.style.overflow = 'hidden'; }
-    function closeSidebar() { sidebar.classList.remove('open'); sidebarOverlay.classList.remove('open'); document.body.style.overflow = ''; }
+        document.getElementById(
+          'chatMessages'
+        ).innerHTML = '';
 
-    menuToggle.addEventListener('click', openSidebar);
-    sidebarClose.addEventListener('click', closeSidebar);
-    sidebarOverlay.addEventListener('click', closeSidebar);
+        document.getElementById(
+          'welcomeScreen'
+        ).style.display = '';
 
-    // Toggle modo adaptativo / baseline
-    const btnAdaptive = document.getElementById('btnAdaptive');
-    const btnBaseline = document.getElementById('btnBaseline');
-    function updatePilotToggleUI() {
-      const isAdaptive = window.pilotMode === 'adaptive';
-      btnAdaptive.style.background = isAdaptive ? 'var(--blue)' : 'transparent';
-      btnAdaptive.style.color      = isAdaptive ? '#fff' : 'var(--text-muted)';
-      btnBaseline.style.background = isAdaptive ? 'transparent' : 'var(--blue)';
-      btnBaseline.style.color      = isAdaptive ? 'var(--text-muted)' : '#fff';
+        window.chatVisible = false;
+
+        window.pendingQuestion = null;
+
+        window.currentTopic = null;
+
+        closeSidebar();
+      });
+
+    // ========================================================
+    // LOGOUT
+    // ========================================================
+
+    document.getElementById('logoutBtn')
+      .addEventListener('click', async () => {
+
+        await window.closeSession(false);
+
+        await logout();
+
+        window.location.href =
+          'login.html';
+      });
+
+    // ========================================================
+    // SIDEBAR
+    // ========================================================
+
+    const menuToggle =
+      document.getElementById('menuToggle');
+
+    const sidebar =
+      document.getElementById('sidebar');
+
+    const sidebarClose =
+      document.getElementById('sidebarClose');
+
+    const sidebarOverlay =
+      document.getElementById('sidebarOverlay');
+
+    function openSidebar() {
+
+      sidebar.classList.add('open');
+
+      sidebarOverlay.classList.add('open');
+
+      document.body.style.overflow =
+        'hidden';
     }
-    btnAdaptive.addEventListener('click', async () => {
-      if (window.pilotMode === 'adaptive') return;
-      if (window.activeSession) await window.closeSession(true);
-      window.pilotMode = 'adaptive';
-      updatePilotToggleUI();
-      window.appendMessage('🧠 Modo cambiado a **Adaptativo**.', 'bot');
-    });
-    btnBaseline.addEventListener('click', async () => {
-      if (window.pilotMode === 'baseline') return;
-      if (window.activeSession) await window.closeSession(true);
-      window.pilotMode = 'baseline';
-      updatePilotToggleUI();
-      window.appendMessage('📋 Modo cambiado a **Tradicional** (baseline).', 'bot');
-    });
+
+    function closeSidebar() {
+
+      sidebar.classList.remove('open');
+
+      sidebarOverlay.classList.remove('open');
+
+      document.body.style.overflow = '';
+    }
+
+    menuToggle.addEventListener(
+      'click',
+      openSidebar
+    );
+
+    sidebarClose.addEventListener(
+      'click',
+      closeSidebar
+    );
+
+    sidebarOverlay.addEventListener(
+      'click',
+      closeSidebar
+    );
+
+    // ========================================================
+    // TOGGLE MODOS
+    // ========================================================
+
+    const btnAdaptive =
+      document.getElementById('btnAdaptive');
+
+    const btnBaseline =
+      document.getElementById('btnBaseline');
+
+    function updatePilotToggleUI() {
+
+      const isAdaptive =
+        window.pilotMode === 'adaptive';
+
+      btnAdaptive.style.background =
+        isAdaptive
+          ? 'var(--blue)'
+          : 'transparent';
+
+      btnAdaptive.style.color =
+        isAdaptive
+          ? '#fff'
+          : 'var(--text-muted)';
+
+      btnBaseline.style.background =
+        isAdaptive
+          ? 'transparent'
+          : 'var(--blue)';
+
+      btnBaseline.style.color =
+        isAdaptive
+          ? 'var(--text-muted)'
+          : '#fff';
+    }
+
+    btnAdaptive.addEventListener(
+      'click',
+      async () => {
+
+        if (
+          window.pilotMode === 'adaptive'
+        ) return;
+
+        if (window.activeSession) {
+
+          await window.closeSession(true);
+        }
+
+        window.pilotMode = 'adaptive';
+
+        updatePilotToggleUI();
+      }
+    );
+
+    btnBaseline.addEventListener(
+      'click',
+      async () => {
+
+        if (
+          window.pilotMode === 'baseline'
+        ) return;
+
+        if (window.activeSession) {
+
+          await window.closeSession(true);
+        }
+
+        window.pilotMode = 'baseline';
+
+        updatePilotToggleUI();
+      }
+    );
+
     updatePilotToggleUI();
 
-    // Recuperar sesión pendiente (si existe localStorage)
-    recoverPendingSession();
+    // ========================================================
+    // Recuperar sesión pendiente
+    // ========================================================
 
-    async function recoverPendingSession() {
-      const uid = sessionStorage.getItem('edu_uid');
-      if (!uid) return;
-      const pendingKey = `edu_pending_session_${uid}`;
-      const raw = localStorage.getItem(pendingKey);
-      if (!raw) return;
-      localStorage.removeItem(pendingKey);
-      try {
-        const { sessionId } = JSON.parse(raw);
-        await fetch(`${CONFIG.API_BASE_URL}/api/session/recover`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ session_id: sessionId, uid })
-        });
-      } catch (_) {}
-    }
+    recoverPendingSession();
   }
 }

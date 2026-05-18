@@ -20,6 +20,7 @@
   --text-faint:  #475569;
   --green:       #10B981;
   --red:         #EF4444;
+  --yellow:      #F59E0B;
   --radius-sm:   8px;
   --radius:      12px;
   --radius-lg:   18px;
@@ -106,6 +107,11 @@ body {
   position: relative; z-index: 1;
   width: 100%; max-width: 420px;
   padding: 20px;
+}
+
+/* Aumentamos el ancho máximo para el registro */
+.register-container {
+  max-width: 640px;
 }
 
 .login-card {
@@ -447,8 +453,11 @@ body {
 
 .topbar-info { flex: 1; }
 .tutor-status {
-  display: flex; align-items: center; gap: 8px;
-  font-size: 0.83rem; color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.83rem;
+  color: var(--text-muted);
   font-weight: 500;
 }
 .status-dot {
@@ -560,7 +569,9 @@ body {
 .msg-avatar {
   width: 32px; height: 32px;
   border-radius: 9px;
-  display: flex; align-items: center; justify-content: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
   font-size: 0.75rem;
   font-weight: 700;
@@ -737,10 +748,6 @@ body {
    REGISTER / DIAGNOSTIC PAGE
    ============================================================ */
 
-.register-container {
-  max-width: 640px;
-}
-
 .register-card {
   padding: 32px 40px;
 }
@@ -806,6 +813,10 @@ body {
 .register-step {
   display: none;
   animation: fadeSlide 0.3s ease;
+  /* Hacemos que cada paso tenga scroll si su contenido es alto */
+  max-height: 70vh;
+  overflow-y: auto;
+  padding-right: 5px; /* espacio para la scrollbar */
 }
 .register-step.active { display: block; }
 
@@ -944,8 +955,7 @@ body {
   border-color: rgba(59,130,246,0.4);
   background: var(--surface3);
 }
-.pref-card input { display: none; }
-.pref-card:has(input:checked) {
+.pref-card.selected {
   border-color: var(--blue);
   background: var(--blue-dim);
   box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
@@ -957,7 +967,7 @@ body {
   color: var(--text);
 }
 
-/* Time options */
+/* Time options (aún en el CSS por si acaso, pero no se usan si se elimina la sección) */
 .time-options {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -972,13 +982,13 @@ body {
   cursor: pointer;
   transition: var(--transition);
   text-align: center;
+  color: white;
 }
-.time-card input { display: none; }
 .time-card:hover {
   border-color: rgba(59,130,246,0.4);
   background: var(--surface3);
 }
-.time-card:has(input:checked) {
+.time-card.selected {
   border-color: var(--blue);
   background: var(--blue-dim);
 }
@@ -1087,6 +1097,9 @@ body {
   padding: 18px;
   margin: 12px 0 20px;
   text-align: left;
+  /* Permitir scroll interno si hay muchas barras */
+  max-height: 400px;
+  overflow-y: auto;
 }
 .state-row {
   display: flex;
@@ -1110,6 +1123,65 @@ body {
 .state-value.mid    { color: #F59E0B; }
 .state-value.low    { color: #EF4444; }
 
+/* Barras de progreso de temas (nuevo) */
+.topic-bar-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 12px;
+}
+.topic-bar-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 3px;
+}
+.topic-bar-header .topic-name {
+  text-transform: capitalize;
+  font-weight: 500;
+  color: #CBD5E1;
+}
+.topic-bar-header .topic-percent {
+  font-weight: 600;
+}
+.topic-bar-track {
+  background: var(--surface3);
+  border-radius: 10px;
+  height: 8px;
+  width: 100%;
+  overflow: hidden;
+}
+.topic-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  transition: width 0.4s ease;
+}
+.topic-bar-level {
+  font-size: 0.7rem;
+  color: var(--text-faint);
+  margin-top: 2px;
+  text-align: right;
+}
+
+/* Ruta crítica */
+.critical-route {
+  margin-top: 18px;
+  padding: 10px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+}
+.critical-route.warning {
+  background: rgba(239, 68, 68, 0.1);
+  border-left: 3px solid #EF4444;
+  color: #FCA5A5;
+}
+.critical-route.success {
+  background: rgba(16, 185, 129, 0.1);
+  border-left: 3px solid #10B981;
+  color: #A7F3D0;
+}
+
 /* Mobile tweaks */
 @media (max-width: 640px) {
   .register-card { padding: 24px 20px; }
@@ -1117,4 +1189,15 @@ body {
   .step-line { max-width: 40px; }
   .pref-grid { grid-template-columns: repeat(2, 1fr); }
   .time-options { grid-template-columns: 1fr; }
+  .register-step {
+    max-height: 60vh; /* un poco menos en móviles */
+    padding-right: 3px;
+  }
+}
+
+/* ============================================================
+   OCULTAR AVATARES (recuadros laterales)
+   ============================================================ */
+.msg-avatar {
+    display: none;
 }

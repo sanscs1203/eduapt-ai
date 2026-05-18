@@ -1,125 +1,157 @@
-/* ============================================================
-   EduAdapt AI – session.js
-   Gestión de sesión de aprendizaje (backend-driven)
-   ============================================================ */
-
+// frontend/js/session.js
 import { CONFIG } from './config.js';
 
-// Variables globales (se adjuntan a window para compartir con otros módulos)
-window.activeSession = null;   // { sessionId, topic, startTime, questions:[] }
-window.pendingQuestion = null;
-window.pendingFeedback = null;
+// Variables globales
+window.activeSession = null;
 window.currentTopic = null;
-window.studentS = { a: 0.5, t: 0.5, f: 0.5, d: 0.5, selfLevel: 'mid' };
+window.pendingQuestion = null;
+window.studentS = null;
 
-/* Actualiza el panel visual de estado del estudiante */
-function updateStatePanelUI() {
-  const aEl = document.getElementById('stateA');
-  const dEl = document.getElementById('stateD');
-  const lEl = document.getElementById('stateLevel');
-  if (!aEl) return;
-  aEl.textContent = window.studentS.a.toFixed(2);
-  dEl.textContent = window.studentS.d.toFixed(2);
-  const tier = getTier(window.studentS);
-  const colors = {
-    'Challenge':     { label: '🏆 Avanzado',     color: '#10B981' },
-    'Advancement':   { label: '📈 Progresando',   color: '#3B82F6' },
-    'Reinforcement': { label: '📚 Consolidando',  color: '#F59E0B' },
-    'Remedial':      { label: '🔰 Reforzando',    color: '#EF4444' }
-  };
-  const info = colors[tier];
-  lEl.textContent  = info.label;
-  lEl.style.color  = info.color;
-}
+// --------------------------------------------------------------
+// Iniciar una sesión de ejercicios
+// --------------------------------------------------------------
+window.startSession = async function(topic) {
+    if (window.activeSession) await window.closeSession(true);
+    const uid = sessionStorage.getItem('edu_uid');
+    try {
+        const response = await fetch(`${CONFIG.API_BASE_URL}/api/session/start`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                uid: uid,
+                topic: topic,
+                mode: window.pilotMode || 'adaptive',
+                S: window.studentS // Aquí enviamos el nuevo vector multitema al Python
+            })
+        });
+        const data = await response.json();
+        window.activeSession = data.session_id;
+        window.currentTopic = topic;
+        if (uid) {
+            localStorage.setItem(`edu_pending_session_${uid}`, JSON.stringify({ sessionId: data.session_id }));
+        }
+        const topbarSubject = document.getElementById('topbarSubject');
+        if (topbarSubject) {
+            topbarSubject.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg> ${CONFIG.TOPIC_LABELS[topic] || topic}`;
+        }
+        return data.first_question;
+    } catch (error) {
+        console.error('Error starting session:', error);
+        window.appendMessage('No se pudo iniciar la sesión.', 'bot');
+        return null;
+    }
+};
 
-function getTier(S) {
-  if (S.a >= 0.85) return 'Challenge';
-  if (S.a >= 0.70) return 'Advancement';
-  if (S.a >= 0.45) return 'Reinforcement';
-  return 'Remedial';
-}
+// --------------------------------------------------------------
+// Enviar respuesta
+// --------------------------------------------------------------
+window.submitAnswer = async function(userAnswer, questionId, responseTimeSec) {
+    if (!window.activeSession) return null;
+    const uid = sessionStorage.getItem('edu_uid');
+    try {
+        const response = await fetch(`${CONFIG.API_BASE_URL}/api/evaluate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                session_id: window.activeSession,
+                user_answer: userAnswer,
+                question_id: questionId,
+                response_time: responseTimeSec,
+                uid: uid
+            })
+        });
+        const data = await response.json();
+        window.studentS = data.S_new;
+        sessionStorage.setItem('edu_S', JSON.stringify(window.studentS));
+        window.updateStatePanelUI();
+        window.appendMessage(data.explanation, 'bot');
+        if (data.resource && data.resource.url && data.resource.url !== '#') {
+            window.appendMessage(`📚 Recurso: <a href="${data.resource.url}" target="_blank">${data.resource.title}</a>`, 'bot');
+        }
+        if (data.next_question) {
+            window.pendingQuestion = data.next_question;
+            window.pendingQuestion.deliveredAt = Date.now();
+            window.appendMessage(`**${data.next_question.question}**`, 'bot');
+        } else {
+            await window.closeSession(true);
+            window.appendMessage('¡Has completado todos los ejercicios! 🎉', 'bot');
+        }
+        return data;
+    } catch (error) {
+        console.error('Error submitting answer:', error);
+        window.appendMessage('Error al evaluar tu respuesta.', 'bot');
+        return null;
+    }
+};
 
-/* Inicia sesión en backend y obtiene primera pregunta */
-async function startSession(topic) {
-  if (window.activeSession && window.activeSession.topic === topic) return;
-  if (window.activeSession) await closeSession(false);
-
-  const uid = sessionStorage.getItem('edu_uid');
-  const response = await fetch(`${CONFIG.API_BASE_URL}/api/session/start`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      uid,
-      topic,
-      mode: window.pilotMode || CONFIG.DEFAULT_MODE,
-      S: window.studentS
-    })
-  });
-  if (!response.ok) throw new Error('Error al iniciar sesión');
-  const data = await response.json();
-  window.activeSession = {
-    sessionId: data.session_id,
-    topic,
-    startTime: Date.now(),
-    questions: []
-  };
-  window.currentTopic = topic;
-  return data.first_question;
-}
-
-/* Envía respuesta del estudiante */
-async function submitAnswer(userAnswer) {
-  if (!window.pendingQuestion) return null;
-  const responseTimeSec = (Date.now() - window.pendingQuestion.deliveredAt) / 1000;
-
-  const res = await fetch(`${CONFIG.API_BASE_URL}/api/evaluate`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      session_id: window.activeSession.sessionId,
-      question_id: window.pendingQuestion.id,
-      user_answer: userAnswer,
-      response_time: responseTimeSec,
-      uid: sessionStorage.getItem('edu_uid')
-    })
-  });
-  const data = await res.json();
-  window.studentS = data.S_new;
-  updateStatePanelUI();
-  persistS();
-  return data;
-}
-
-async function closeSession(showSummary = true) {
-  if (!window.activeSession || window.activeSession.questions.length === 0) {
+// --------------------------------------------------------------
+// Cerrar sesión
+// --------------------------------------------------------------
+window.closeSession = async function(saveMetrics = true) {
+    if (!window.activeSession) return;
+    if (saveMetrics) {
+        try {
+            const response = await fetch(`${CONFIG.API_BASE_URL}/api/session/close`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ session_id: window.activeSession })
+            });
+            const metrics = await response.json();
+            if (metrics && metrics.totalQuestions > 0) {
+                window.appendMessage(`📊 Sesión finalizada. Aciertos: ${metrics.correctCount}/${metrics.totalQuestions} (${Math.round(metrics.accuracy*100)}%)`, 'system');
+            }
+        } catch (error) {
+            console.error('Error closing session:', error);
+        }
+    }
     window.activeSession = null;
-    return null;
-  }
-  const session = window.activeSession;
-  window.activeSession = null;
-  window.pendingFeedback = null;
+    window.currentTopic = null;
+    window.pendingQuestion = null;
+    const uid = sessionStorage.getItem('edu_uid');
+    if (uid) localStorage.removeItem(`edu_pending_session_${uid}`);
+    document.getElementById('topbarSubject').innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg> Álgebra`;
+};
 
-  const res = await fetch(`${CONFIG.API_BASE_URL}/api/session/close`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ session_id: session.sessionId, uid: sessionStorage.getItem('edu_uid') })
-  });
-  if (!res.ok) return null;
-  const metrics = await res.json();
-  if (showSummary && metrics) {
-    return metrics;
-  }
-  return null;
+// --------------------------------------------------------------
+// Actualizar UI del estado
+// --------------------------------------------------------------
+window.updateStatePanelUI = function() {
+    const s = window.studentS;
+    if (!s || !s.a_temas) return;
+
+    const stateA = document.getElementById('stateA');
+    const stateD = document.getElementById('stateD');
+    const stateLevel = document.getElementById('stateLevel');
+
+    // 1. Calculamos el promedio de maestría de todos los temas para el "Progreso Total"
+    const temas = Object.values(s.a_temas);
+    const avgMastery = temas.reduce((acc, t) => acc + t.mastery, 0) / temas.length;
+
+    if (stateA) stateA.textContent = `${(avgMastery * 100).toFixed(0)}%`;
+    
+    // 2. d_global ahora está en la raíz de S
+    if (stateD && s.d_global) stateD.textContent = `${s.d_global.toFixed(2)}`;
+
+    // 3. Nivel visual basado en el promedio
+    if (stateLevel) {
+        const tier = avgMastery >= 0.85 ? 'Experto' : (avgMastery >= 0.6 ? 'Intermedio' : 'Iniciado');
+        stateLevel.textContent = tier;
+    }
+};
+
+// --------------------------------------------------------------
+// Recuperar sesión pendiente (exportada)
+// --------------------------------------------------------------
+export async function recoverPendingSession() {
+    const uid = sessionStorage.getItem('edu_uid');
+    if (!uid) return;
+    const pendingKey = `edu_pending_session_${uid}`;
+    const raw = localStorage.getItem(pendingKey);
+    if (!raw) return;
+    localStorage.removeItem(pendingKey);
+    try {
+        const { sessionId } = JSON.parse(raw);
+        window.activeSession = sessionId;
+        console.log('Sesión pendiente encontrada:', sessionId);
+    } catch (_) {}
 }
-
-function persistS() {
-  sessionStorage.setItem('edu_S', JSON.stringify(window.studentS));
-}
-
-// Exponer funciones en window para uso desde main.js y chat.js
-window.updateStatePanelUI = updateStatePanelUI;
-window.getTier = getTier;
-window.startSession = startSession;
-window.submitAnswer = submitAnswer;
-window.closeSession = closeSession;
-window.persistS = persistS;

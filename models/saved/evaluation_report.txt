@@ -1,0 +1,21 @@
+EduAdapt AI – Evaluación de modelos (standalone)
+========================================
+Preguntas cargadas: 161
+Usuarios en test: 60
+Interacciones en test: 3600
+
+
+--- k=5 ---
+knn: Precision@5=0.2467, Recall@5=0.0803, MRR@5=0.5158, NDCG@5=0.5549
+svd: Precision@5=0.2467, Recall@5=0.0831, MRR@5=0.5528, NDCG@5=0.5870
+rf: Precision@5=0.1233, Recall@5=0.0420, MRR@5=0.2028, NDCG@5=0.2769
+
+--- k=10 ---
+knn: Precision@10=0.2017, Recall@10=0.1389, MRR@10=0.5361, NDCG@10=0.5856
+svd: Precision@10=0.1233, Recall@10=0.0831, MRR@10=0.5528, NDCG@10=0.5870
+rf: Precision@10=0.0617, Recall@10=0.0420, MRR@10=0.2028, NDCG@10=0.2769
+
+--- k=20 ---
+knn: Precision@20=0.1008, Recall@20=0.1389, MRR@20=0.5361, NDCG@20=0.5856
+svd: Precision@20=0.1008, Recall@20=0.1389, MRR@20=0.5622, NDCG@20=0.5907
+rf: Precision@20=0.1008, Recall@20=0.1389, MRR@20=0.2332, NDCG@20=0.3756
