@@ -37,13 +37,14 @@
       <!-- Form -->
       <form class="login-form" id="loginForm">
         <div class="form-group">
-          <label for="username">Correo electrónico</label>
+          <label for="username">Nombre completo</label>
           <div class="input-wrapper">
+            <!-- Icono de usuario (persona) -->
             <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-              <polyline points="22,6 12,13 2,6"/>
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
             </svg>
-            <input type="email" id="username" placeholder="tu@correo.com" autocomplete="off"/>
+            <input type="text" id="username" placeholder="Tu nombre completo" autocomplete="off"/>
           </div>
         </div>
 
@@ -68,7 +69,7 @@
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
           </svg>
-          Usuario o contraseña incorrectos
+          Nombre o contraseña incorrectos
         </div>
 
         <button type="submit" class="btn-login" id="loginBtn">
@@ -89,7 +90,7 @@
 
       <!-- Hint -->
       <div class="login-hint">
-        <span>Nota:</span> Usa tu correo registrado o crea una cuenta nueva
+        <span>Nota:</span> Ingresa el mismo nombre que usaste al registrarte
       </div>
 
     </div>
