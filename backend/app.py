@@ -191,7 +191,7 @@ def build_questions_df():
     return pd.DataFrame(rows)
 
 # --- NLP INTEGRATION: predictor de intención y tópico ---
-def predict_intent_topic(texto_usuario, umbral_confianza=0.60):
+def predict_intent_topic(texto_usuario, umbral_confianza=0.1):
     if nlp_pipeline is None:
         return 'UNKNOWN', 'none', 0.0
 

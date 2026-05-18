@@ -1,0 +1,12 @@
+Training Report - 3 Models Evaluation
+Date: 2026-05-18 14:01:00
+Dataset: 32925 train / 9008 test samples
+Total time: 8.1 min
+
+Models:
+    RandomForest        MSE: 0.0025
+    GradientBoosting    MSE: 0.0022
+    MLP                 MSE: 0.0023
+
+Selected: GradientBoosting (lowest MSE)
+Saved as: results/best_recom_model.pkl
