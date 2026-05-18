@@ -17,20 +17,58 @@ function scrollToBottom() {
     }
 }
 
-window.appendMessage = function(content, sender) {
+// --- Función para formatear intención a texto legible ---
+function formatIntent(intent) {
+    const labels = {
+        GREETING: '👋 Saludo',
+        EXPLAIN: '📘 Explicación',
+        PRACTICE: '📝 Práctica',
+        DOUBT: '❓ Duda',
+        QUIZ: '🧠 Quiz',
+        ABOUT: 'ℹ️ Info',
+        CASUAL: '💬 Charla',
+        THANKS: '🙏 Agradecimiento',
+        GOODBYE: '👋 Despedida',
+        UNKNOWN: '❓ Otra',
+        AMBIGUOUS: '⚠️ Ambiguo'
+    };
+    return labels[intent] || intent;
+}
+
+// --- Versión mejorada de appendMessage que recibe metadatos NLP ---
+window.appendMessage = function(content, sender, meta = {}) {
     const container = getMessagesContainer();
     if (!container) return;
+
     const row = document.createElement('div');
     row.className = `msg-row ${sender}`;
+
     const avatar = document.createElement('div');
     avatar.className = `msg-avatar ${sender === 'user' ? 'user-av' : 'bot'}`;
     avatar.textContent = '';
+
     const bubble = document.createElement('div');
     bubble.className = 'msg-bubble';
+
     let htmlContent = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     htmlContent = htmlContent.replace(/\n/g, '<br>');
-    // Permitir enlaces HTML
     bubble.innerHTML = `<div class="msg-text">${escapeHtml(htmlContent)}</div>`;
+
+    // Añadir badge NLP si es un mensaje del bot y hay metadatos
+    if (sender === 'bot' && meta.intent && meta.intent !== 'AMBIGUOUS') {
+        const badge = document.createElement('div');
+        badge.className = 'nlp-badge';
+        let badgeText = '';
+        if (meta.topic && meta.topic !== 'social' && meta.topic !== 'none') {
+            badgeText = `${formatIntent(meta.intent)} · ${meta.topic}`;
+        } else {
+            badgeText = formatIntent(meta.intent);
+        }
+        badge.textContent = badgeText;
+        badge.title = `Confianza: ${Math.round((meta.confidence || 0) * 100)}%`;
+        bubble.appendChild(badge);
+    }
+
     row.appendChild(avatar);
     row.appendChild(bubble);
     container.appendChild(row);
@@ -60,112 +98,24 @@ window.removeTyping = function() {
     if (typing) typing.remove();
 };
 
-// --- NUEVA FUNCIÓN: solicitar recursos de estudio ---
-async function requestStudyResources(topic) {
-    const uid = sessionStorage.getItem('edu_uid');
-    const S = window.studentS;
-    try {
-        const resp = await fetch(`${CONFIG.API_BASE_URL}/api/resources`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ uid, topic, S })
-        });
-        const data = await resp.json();
-        if (data.resources && data.resources.length > 0) {
-            let msg = `📚 **Recursos para estudiar ${CONFIG.TOPIC_LABELS[topic] || topic}**\n\n*Según tu nivel actual y preferencias:*\n`;
-            data.resources.forEach(r => {
-                msg += `- [${r.title} (${r.difficulty})](${r.url})  \n  _${r.description || ''}_\n`;
-            });
-            msg += '\nCuando te sientas preparado, escribe **"practicar"** para iniciar un test.';
-            appendMessage(msg, 'bot');
-        } else {
-            appendMessage('No encontré recursos para ese tema. Intenta con otro.', 'bot');
-        }
-    } catch (err) {
-        console.error(err);
-        appendMessage('Error al buscar recursos. Inténtalo de nuevo.', 'bot');
-    }
-}
-
-// --- Lógica principal de mensajes ---
+// --- Lógica principal de mensajes (ahora usando NLP del backend) ---
 window.handleMessage = async function(userMessage) {
     if (!userMessage || isWaitingForResponse) return;
+
     const input = document.getElementById('msgInput');
     const sendBtn = document.getElementById('sendBtn');
     if (input) input.disabled = true;
     if (sendBtn) sendBtn.disabled = true;
     isWaitingForResponse = true;
 
+    // Mostrar el mensaje del usuario
     window.appendMessage(userMessage, 'user');
     if (input) input.value = '';
 
-    // Detectar intención de estudio (palabras clave)
-    const lowerMsg = userMessage.toLowerCase();
-    const studyIntents = ['no sé', 'no se', 'estudiar', 'explicar', 'recurso', 'material', 'ayuda', 'no entiendo', 'no tengo idea', 'necesito aprender'];
-    const practiceIntents = ['practicar', 'ejercicio', 'test', 'evaluar', 'probar', 'cuestionario', 'pregunta'];
-
-    let intent = 'chat'; // por defecto, pasamos al LLM
-
-    // Primero, si es claramente una petición de práctica, ignoramos estudio
-    if (practiceIntents.some(w => lowerMsg.includes(w))) {
-        // Iniciar sesión de práctica (se maneja en main.js o session.js, pero aquí podemos delegar)
-        // Simplemente enviamos al LLM para que inicie el flujo, o forzamos startSession
-        // Como no tenemos acceso directo a startSession, dejamos que el LLM responda algo como "Elige un tema"
-        // Pero podemos detectar si hay un tema actual y iniciar práctica directamente.
-        if (window.currentTopic) {
-            window.removeTyping(); // removemos el typing que se mostrará después
-            // Llamamos a startSession (definida en session.js)
-            const q = await window.startSession(window.currentTopic);
-            if (q) {
-                window.appendMessage(`¡Vamos a practicar **${CONFIG.TOPIC_LABELS[window.currentTopic]}**!`, 'bot');
-                window.pendingQuestion = q;
-                window.pendingQuestion.deliveredAt = Date.now();
-                window.appendMessage(`**${q.question}**`, 'bot');
-            }
-            if (input) input.disabled = false;
-            if (sendBtn) sendBtn.disabled = false;
-            isWaitingForResponse = false;
-            return;
-        } else {
-            appendMessage('Primero selecciona un tema de la barra lateral o escribe el nombre del tema.', 'bot');
-            if (input) input.disabled = false;
-            if (sendBtn) sendBtn.disabled = false;
-            isWaitingForResponse = false;
-            return;
-        }
-    } else if (studyIntents.some(w => lowerMsg.includes(w))) {
-        // Intentar extraer un tema del mensaje o usar el tema actual
-        let topic = window.currentTopic;
-        if (!topic) {
-            // Buscar tema en el mensaje
-            for (const t of CONFIG.TOPICS) {
-                if (lowerMsg.includes(t) || lowerMsg.includes(CONFIG.TOPIC_LABELS[t].toLowerCase())) {
-                    topic = t;
-                    break;
-                }
-            }
-        }
-        if (topic) {
-            window.showTyping();
-            await requestStudyResources(topic);
-            window.removeTyping();
-            if (input) input.disabled = false;
-            if (sendBtn) sendBtn.disabled = false;
-            isWaitingForResponse = false;
-            return;
-        } else {
-            appendMessage('¿Sobre qué tema necesitas ayuda? Puedes decirme, por ejemplo, "no sé nada de factorización".', 'bot');
-            if (input) input.disabled = false;
-            if (sendBtn) sendBtn.disabled = false;
-            isWaitingForResponse = false;
-            return;
-        }
-    }
-
-    // Si no es estudio ni práctica, usar el LLM normal
     window.showTyping();
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000);
+
     try {
         const response = await fetch(`${CONFIG.API_BASE_URL}/api/chat`, {
             method: 'POST',
@@ -174,19 +124,82 @@ window.handleMessage = async function(userMessage) {
             body: JSON.stringify({
                 message: userMessage,
                 uid: sessionStorage.getItem('edu_uid') || null,
-                topic: window.currentTopic || 'polinomios',
+                topic: window.currentTopic || 'polinomios',   // tópico actual si existe
                 S: window.studentS || null,
                 chat_session_id: chatSessionId
             })
         });
         clearTimeout(timeoutId);
         const data = await response.json();
+
         if (data.chat_session_id) {
             chatSessionId = data.chat_session_id;
             localStorage.setItem('chatSessionId', chatSessionId);
         }
+
         window.removeTyping();
-        window.appendMessage(data.reply, 'bot');
+
+        const { reply, intent, topic, confidence } = data;
+
+        // Mostrar la respuesta con los metadatos NLP
+        window.appendMessage(reply, 'bot', { intent, topic, confidence });
+
+        // Actualizar tópico en la UI si es relevante
+        if (topic && topic !== 'social' && topic !== 'none') {
+            window.currentTopic = topic;
+            const topbar = document.getElementById('topbarSubject');
+            if (topbar) {
+                topbar.innerHTML = `
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                  </svg>
+                  ${CONFIG.TOPIC_LABELS[topic] || topic}`;
+            }
+        }
+
+        // Acciones automáticas según la intención detectada
+        if (intent === 'PRACTICE' && topic && topic !== 'social' && topic !== 'none') {
+            // Si el usuario quiere practicar, podemos iniciar una sesión directamente
+            // (opcional: preguntar antes; aquí lo hacemos automático)
+            if (!window.activeSession) {
+                const q = await window.startSession(topic);
+                if (q) {
+                    window.appendMessage(`¡De acuerdo! Comenzamos práctica de **${CONFIG.TOPIC_LABELS[topic]}**.`, 'bot');
+                    window.pendingQuestion = q;
+                    window.pendingQuestion.deliveredAt = Date.now();
+                    window.appendMessage(`**${q.question}**`, 'bot');
+                }
+            }
+        } else if ((intent === 'EXPLAIN' || intent === 'DOUBT') && topic && topic !== 'social') {
+            // Podríamos sugerir recursos de estudio automáticamente
+            // (opcional, descomentar si quieres ofrecer recursos sin que el usuario los pida)
+            // await requestStudyResources(topic);
+        }
+
+            // --- Acciones automáticas según intención y tópico ---
+        const hasTopic = topic && topic !== 'social' && topic !== 'none';
+        if (intent === 'PRACTICE') {
+        if (!hasTopic && window.currentTopic) {
+            // Si el usuario no mencionó tema, usar el tópico actual
+            topic = window.currentTopic;
+        }
+        if (topic && topic !== 'social') {
+            if (!window.activeSession) {
+            const q = await window.startSession(topic);
+            if (q) {
+                window.appendMessage(`¡De acuerdo! Comenzamos práctica de **${CONFIG.TOPIC_LABELS[topic]}**.`, 'bot');
+                window.pendingQuestion = q;
+                window.pendingQuestion.deliveredAt = Date.now();
+                window.appendMessage(`**${q.question}**`, 'bot');
+            }
+            }
+        }
+        } else if ((intent === 'EXPLAIN' || intent === 'DOUBT') && hasTopic) {
+        // Ofrecer recursos si el usuario pide explicación sobre un tema concreto
+        await requestStudyResources(topic);
+        }
+
     } catch (error) {
         clearTimeout(timeoutId);
         window.removeTyping();
@@ -203,6 +216,33 @@ window.handleMessage = async function(userMessage) {
         isWaitingForResponse = false;
     }
 };
+
+// --- La función requestStudyResources se mantiene por si se necesita desde otros lugares ---
+async function requestStudyResources(topic) {
+    const uid = sessionStorage.getItem('edu_uid');
+    const S = window.studentS;
+    try {
+        const resp = await fetch(`${CONFIG.API_BASE_URL}/api/resources`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ uid, topic, S })
+        });
+        const data = await resp.json();
+        if (data.resources && data.resources.length > 0) {
+            let msg = `📚 **Recursos para estudiar ${CONFIG.TOPIC_LABELS[topic] || topic}**\n\n*Según tu nivel actual y preferencias:*\n`;
+            data.resources.forEach(r => {
+                msg += `- [${r.title} (${r.difficulty})](${r.url})  \n  _${r.description || ''}_\n`;
+            });
+            msg += '\nCuando te sientas preparado, escribe **"practicar"** para iniciar un test.';
+            window.appendMessage(msg, 'bot');
+        } else {
+            window.appendMessage('No encontré recursos para ese tema. Intenta con otro.', 'bot');
+        }
+    } catch (err) {
+        console.error(err);
+        window.appendMessage('Error al buscar recursos. Inténtalo de nuevo.', 'bot');
+    }
+}
 
 window.resetChatSession = async function() {
     if (!chatSessionId) return;

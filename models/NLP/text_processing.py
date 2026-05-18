@@ -1,6 +1,10 @@
 import re
 
+from nltk.stem.snowball import SnowballStemmer
+
 from sklearn.base import BaseEstimator, TransformerMixin
+
+stemmer = SnowballStemmer("spanish")
 
 # =========================================================
 # MAPA DE EMOJIS
@@ -55,13 +59,20 @@ def clean_text(text: str) -> str:
 def custom_tokenizer(text):
     """
     Tokenizador compatible con:
-    - palabras normales
-    - tokens especiales e_xxx
+    - palabras normales (reducidas a su raíz/stem)
+    - tokens especiales e_xxx (se mantienen intactos)
     """
 
     pattern = r'(?u)[a-záéíóúñü0-9]+|e_\w+'
 
-    return re.findall(pattern, text)
+    tokens = re.findall(pattern, text)
+
+    stemmed_tokens = [
+        stemmer.stem(token) if not token.startswith("e_") else token 
+        for token in tokens
+    ]
+
+    return stemmed_tokens
 
 # =========================================================
 # PREPROCESSOR SKLEARN
