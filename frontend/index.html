@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>EduAdapt AI – Tutor de Álgebra</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <link rel="stylesheet" href="style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 </head>
@@ -36,44 +37,6 @@
         </svg>
         Nueva conversación
       </button>
-
-      <div class="sidebar-section">
-        <span class="section-label">Temas de Álgebra</span>
-        <ul class="history-list" id="historyList">
-          <li class="history-item" data-topic="polinomios">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            <span>Operaciones con polinomios</span>
-          </li>
-          <li class="history-item" data-topic="factorizacion">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            <span>Factorización</span>
-          </li>
-          <li class="history-item" data-topic="ecuaciones">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            <span>Ecuaciones lineales</span>
-          </li>
-          <li class="history-item" data-topic="sistemas">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            <span>Sistemas de ecuaciones</span>
-          </li>
-          <li class="history-item" data-topic="fracciones">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            <span>Fracciones algebraicas</span>
-          </li>
-          <li class="history-item" data-topic="potencias">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            <span>Potencias y radicales</span>
-          </li>
-          <li class="history-item" data-topic="funciones">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            <span>Funciones lineales</span>
-          </li>
-          <li class="history-item" data-topic="inecuaciones">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            <span>Inecuaciones</span>
-          </li>
-        </ul>
-      </div>
 
       <div class="sidebar-divider"></div>
 
@@ -206,6 +169,23 @@
     </main>
   </div>
 
+  <!-- Perfil del estudiante (oculto por defecto) -->
+  <div class="profile-overlay" id="profileOverlay">
+    <div class="profile-panel">
+      <div class="profile-header">
+        <h2>Mi Perfil</h2>
+        <button class="profile-close" id="profileClose">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="profile-content" id="profileContent">
+        <!-- Se llenará con JS -->
+      </div>
+    </div>
+  </div>
+
   <div class="sidebar-overlay" id="sidebarOverlay"></div>
   <script type="module" src="js/utils.js"></script>
   <script type="module" src="js/config.js"></script>
@@ -214,5 +194,6 @@
   <script type="module" src="js/chat.js"></script>
   <script type="module" src="js/session.js"></script>
   <script type="module" src="js/main.js"></script>
+  <script type="module" src="js/profile.js"></script>
 </body>
 </html>

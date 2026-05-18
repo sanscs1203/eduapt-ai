@@ -7,6 +7,10 @@ import uuid
 import pickle
 from datetime import datetime
 
+import numpy as np              # <-- NLP INTEGRATION
+import joblib                   # <-- NLP INTEGRATION
+from scipy.sparse import hstack # <-- NLP INTEGRATION
+
 import pandas as pd
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -25,7 +29,10 @@ from recommenders.random_forest_rec import RandomForestRecommender
 from llm.dialo_gpt_rag import DialoGPTRAGLLM
 from rag_engine import RAGEngine
 
-sys.path.insert(0, str(Path(__file__).parent))
+# --- NLP INTEGRATION: agregar raíz del proyecto al path ---
+# Esto permite que al cargar el pickle se encuentren las clases TextPreprocessor, etc.
+sys.path.insert(0, str(Path(__file__).parent))          # backend/
+sys.path.insert(0, str(Path(__file__).parent.parent))   # eduapt-ai/
 
 app = Flask(__name__)
 CORS(app)
@@ -45,6 +52,9 @@ llm_chat = None
 
 active_sessions = {}
 chat_histories = {}
+
+# --- NLP INTEGRATION: pipeline global ---
+nlp_pipeline = None
 
 # ----------------------------------------------------------------
 # Carga inicial
@@ -105,6 +115,23 @@ def init_llm():
         print(f"❌ Error cargando DialoGPT-RAG: {e}")
         llm_chat = None
 
+# --- NLP INTEGRATION: cargar modelo NLP ---
+def load_nlp_model():
+    global nlp_pipeline
+    nlp_model_path = os.path.join(
+        Path(__file__).parent.parent, 'models', 'NLP', 'results', 'best_nlp_model.pkl'
+    )
+    if os.path.exists(nlp_model_path):
+        try:
+            nlp_pipeline = joblib.load(nlp_model_path)
+            print("✅ Modelo NLP (intent/topic) cargado correctamente")
+        except Exception as e:
+            print(f"❌ Error cargando modelo NLP: {e}")
+            nlp_pipeline = None
+    else:
+        print(f"⚠️ Modelo NLP no encontrado en {nlp_model_path}")
+        nlp_pipeline = None
+
 # ----------------------------------------------------------------
 # Helpers
 # ----------------------------------------------------------------
@@ -141,6 +168,50 @@ def build_questions_df():
             rows.append(q_copy)
     return pd.DataFrame(rows)
 
+# --- NLP INTEGRATION: predictor de intención y tópico ---
+def predict_intent_topic(texto_usuario, umbral_confianza=0.60):
+    if nlp_pipeline is None:
+        return 'UNKNOWN', 'none', 0.0
+
+    preprocessor = nlp_pipeline['preprocessor']
+    word_vectorizer = nlp_pipeline['word_vectorizer']
+    char_vectorizer = nlp_pipeline['char_vectorizer']
+    model_intent = nlp_pipeline['model_intent']
+    model_topic = nlp_pipeline['model_topic']
+    intent_classes = nlp_pipeline['intent_classes']
+    topic_classes = nlp_pipeline['topic_classes']
+
+    texto_limpio = preprocessor.transform([texto_usuario])
+    X_word = word_vectorizer.transform(texto_limpio)
+    X_char = char_vectorizer.transform(texto_limpio)
+    X_final = hstack([X_word, X_char])
+
+    def get_probs(model, X):
+        if hasattr(model, "predict_proba"):
+            return model.predict_proba(X)[0]
+        else:
+            scores = model.decision_function(X)[0]
+            probs = np.exp(scores) / np.sum(np.exp(scores))
+            return probs
+
+    intent_probs = get_probs(model_intent, X_final)
+    idx_max = np.argmax(intent_probs)
+    max_prob = intent_probs[idx_max]
+    if max_prob < umbral_confianza:
+        return 'AMBIGUOUS', 'none', float(max_prob)
+
+    intent_detectado = intent_classes[idx_max]
+
+    intents_sociales = {"GREETING", "GOODBYE", "CASUAL", "ABOUT", "THANKS"}
+    if intent_detectado in intents_sociales:
+        topic_detectado = 'social'
+    else:
+        topic_probs = get_probs(model_topic, X_final)
+        idx_topic = np.argmax(topic_probs)
+        topic_detectado = topic_classes[idx_topic]
+
+    return intent_detectado, topic_detectado, float(max_prob)
+
 # ----------------------------------------------------------------
 # Endpoints
 # ----------------------------------------------------------------
@@ -150,7 +221,8 @@ def health():
         'status': 'ok',
         'question_bank_loaded': len(QUESTION_BANK) > 0,
         'recommenders_loaded': [name for name, m in recommenders.items() if m is not None],
-        'llm_available': llm_chat is not None
+        'llm_available': llm_chat is not None,
+        'nlp_model_available': nlp_pipeline is not None   # <-- NLP INTEGRATION
     })
 
 @app.route('/api/session/start', methods=['POST'])
@@ -224,6 +296,8 @@ def evaluate():
             self_level = user['selfLevel']
     new_S = student_model.update(old_S, result['is_correct'], response_time, self_level)
     session['S'] = new_S
+    if uid:
+        firebase_client.update_user_S(uid, new_S)
     session['questions'].append({'question_id': question_id, 'correct': result['is_correct'], 'time_spent': response_time, 'S_before': old_S, 'S_after': new_S})
     try:
         firebase_client.save_interaction({'uid': uid, 'session_id': session_id, 'topic': session['topic'], 'question_id': question_id, 'difficulty': question.get('difficulty'), 'type': question.get('type'), 'pilotMode': session['mode'], 'userMsg': user_answer, 'correct': result['is_correct'], 'S_after': new_S, 'createdAt': firestore.SERVER_TIMESTAMP})
@@ -262,15 +336,49 @@ def session_close():
     questions = session['questions']
     if not questions:
         return jsonify({'message': 'No questions answered'})
+
+    # --- Actualizar estado S del usuario en Firestore ---
+    uid = session.get('uid')
+    if uid:
+        firebase_client.update_user_S(uid, session['S'])   # session['S'] ya tiene el último estado
+
     total = len(questions)
     correct = sum(1 for q in questions if q['correct'])
     accuracy = correct / total if total else 0
     total_time = sum(q.get('time_spent', 0) for q in questions)
-    metrics = {'session_id': session_id, 'topic': session['topic'], 'topicLabel': session.get('topicLabel', session['topic']), 'totalQuestions': total, 'correctCount': correct, 'incorrectCount': total - correct, 'accuracy': round(accuracy, 2), 'totalTimeSec': round(total_time, 1), 'avgTimeSec': round(total_time / total, 1) if total else 0, 'suggestedPath': 'Seguir practicando para mejorar la precisión.', 'S_end': session['S']}
+
+    metrics = {
+        'session_id': session_id,
+        'topic': session['topic'],
+        'topicLabel': session.get('topicLabel', session['topic']),
+        'totalQuestions': total,
+        'correctCount': correct,
+        'incorrectCount': total - correct,
+        'accuracy': round(accuracy, 2),
+        'totalTimeSec': round(total_time, 1),
+        'avgTimeSec': round(total_time / total, 1) if total else 0,
+        'suggestedPath': 'Seguir practicando para mejorar la precisión.',
+        'S_end': session['S']
+    }
     try:
-        firebase_client.save_session({'sessionId': session_id, 'uid': session['uid'], 'topic': session['topic'], 'topicLabel': session.get('topicLabel', ''), 'pilotMode': session['mode'], 'pilotRunId': 'pilot_final_2026_05', 'startedAt': session['start_time'], 'endedAt': firestore.SERVER_TIMESTAMP, 'totalQuestions': total, 'correctCount': correct, 'accuracy': accuracy, 'totalTimeSec': total_time, 'questions': questions})
+        firebase_client.save_session({
+            'sessionId': session_id,
+            'uid': session['uid'],
+            'topic': session['topic'],
+            'topicLabel': session.get('topicLabel', ''),
+            'pilotMode': session['mode'],
+            'pilotRunId': 'pilot_final_2026_05',
+            'startedAt': session['start_time'],
+            'endedAt': firestore.SERVER_TIMESTAMP,
+            'totalQuestions': total,
+            'correctCount': correct,
+            'accuracy': accuracy,
+            'totalTimeSec': total_time,
+            'questions': questions
+        })
     except Exception as e:
         print(f"Error saving session: {e}")
+
     return jsonify(metrics)
 
 # --- ENDPOINT DE RECURSOS DE ESTUDIO ---
@@ -425,6 +533,7 @@ def feedback():
         print(f"Error saving feedback: {e}")
     return jsonify({'status': 'ok'})
 
+# --- ENDPOINT CHAT (MODIFICADO CON NLP) ---
 @app.route('/api/chat', methods=['POST'])
 def chat():
     global llm_chat
@@ -438,11 +547,35 @@ def chat():
     if not chat_session_id:
         chat_session_id = f"chat_{uuid.uuid4().hex[:12]}"
 
+    # --- NLP: detección de intención y tópico ---
+    intent, detected_topic, conf = predict_intent_topic(message)
+    # Mantener el tópico actual si la detección es social o poco fiable
+    final_topic = detected_topic if detected_topic != 'social' and conf > 0.60 else topic
+
+    if intent == 'AMBIGUOUS':
+        return jsonify({
+            'reply': "No logré comprender del todo tu solicitud. ¿Podrías reformularla?",
+            'intent': intent,
+            'topic': 'none',
+            'confidence': conf,
+            'chat_session_id': chat_session_id
+        })
+
     if llm_chat is None:
-        return jsonify({'reply': 'El tutor aún no está listo. Intenta en unos segundos.', 'chat_session_id': chat_session_id}), 503
+        return jsonify({
+            'reply': 'El tutor aún no está listo. Intenta en unos segundos.',
+            'chat_session_id': chat_session_id
+        }), 503
 
     history = chat_histories.get(chat_session_id, [])
-    context = {'uid': uid, 'S': S, 'topic': topic, 'mode': data.get('mode', 'adaptive'), 'chat_history': history}
+    context = {
+        'uid': uid,
+        'S': S,
+        'topic': final_topic,
+        'intent': intent,
+        'mode': data.get('mode', 'adaptive'),
+        'chat_history': history
+    }
 
     try:
         reply = llm_chat.generate(message, context)
@@ -456,7 +589,14 @@ def chat():
         history = history[-10:]
     chat_histories[chat_session_id] = history
 
-    return jsonify({'reply': reply, 'model_used': llm_chat.name(), 'chat_session_id': chat_session_id})
+    return jsonify({
+        'reply': reply,
+        'model_used': llm_chat.name(),
+        'intent': intent,
+        'topic': final_topic,
+        'confidence': conf,
+        'chat_session_id': chat_session_id
+    })
 
 @app.route('/api/chat/reset', methods=['POST'])
 def chat_reset():
@@ -473,8 +613,77 @@ def models_status():
     return jsonify({
         'recommenders_available': [name for name, m in recommenders.items() if m is not None],
         'llm_available': llm_chat is not None,
+        'nlp_model_available': nlp_pipeline is not None,
         'question_bank_size': sum(len(v) for v in QUESTION_BANK.values())
     })
+
+@app.route('/api/profile/<uid>', methods=['GET'])
+def get_profile(uid):
+    """Devuelve datos completos del perfil del estudiante."""
+    try:
+        # Obtener datos del usuario desde Firebase
+        user = firebase_client.get_user(uid)
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+
+        # Obtener sesiones ordenadas por fecha
+        sessions_ref = firebase_client.db.collection('sessions') \
+            .where('uid', '==', uid) \
+            .order_by('startedAt', direction=firestore.Query.ASCENDING) \
+            .stream()
+        
+        sessions = []
+        mastery_history = []  # Para el gráfico
+        for i, doc in enumerate(sessions, start=1):
+            data = doc.to_dict()
+            # Calcular dominio global de esa sesión (promedio de a_temas)
+            S_end = data.get('S_end', {})
+            temas = S_end.get('a_temas', {})
+            if temas:
+                avg_mastery = sum(t.get('mastery', 0) for t in temas.values()) / len(temas)
+            else:
+                avg_mastery = data.get('accuracy', 0)
+
+            sessions.append({
+                'session_number': i,
+                'topic': data.get('topic'),
+                'accuracy': data.get('accuracy', 0),
+                'total_questions': data.get('totalQuestions', 0),
+                'ended_at': data.get('endedAt', None)
+            })
+            mastery_history.append({
+                'session_number': i,
+                'global_mastery': round(avg_mastery, 3)
+            })
+
+        # Preferencias
+        prefs = user.get('preferences', [])
+
+        # Ruta crítica (podemos simularla con los temas más débiles)
+        current_S = user.get('S', {})
+        temas_actuales = current_S.get('a_temas', {})
+        if temas_actuales:
+            weakest = sorted(temas_actuales.items(), key=lambda x: x[1].get('mastery', 0))[:3]
+            critical_path = [{'topic': t, 'mastery': v.get('mastery', 0)} for t, v in weakest]
+        else:
+            critical_path = []
+
+        # Nivel de dominio por tema
+        topic_mastery = {t: v.get('mastery', 0) for t, v in temas_actuales.items()}
+
+        profile = {
+            'name': user.get('name', 'Estudiante'),
+            'preferences': prefs,
+            'critical_path': critical_path,
+            'total_sessions': len(sessions),
+            'topic_mastery': topic_mastery,
+            'mastery_history': mastery_history
+        }
+
+        return jsonify(profile)
+    except Exception as e:
+        print(f"Error obteniendo perfil: {e}")
+        return jsonify({'error': str(e)}), 500    
 
 # ----------------------------------------------------------------
 # Inicio
@@ -487,4 +696,5 @@ if __name__ == '__main__':
     os.makedirs(app.config['MODELS_DIR'], exist_ok=True)
     load_recommenders()
     init_llm()
+    load_nlp_model()            # <-- NLP INTEGRATION
     app.run(debug=app.config['DEBUG'], host=app.config['HOST'], port=app.config['PORT'])
