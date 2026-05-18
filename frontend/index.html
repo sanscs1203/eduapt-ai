@@ -40,36 +40,18 @@
 
       <div class="sidebar-divider"></div>
 
-      <!-- Estado del estudiante -->
+      <!-- Nivel de dominio del tema activo -->
       <div style="padding: 10px 8px 4px;">
-        <div style="font-size:0.68rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-faint);margin-bottom:8px;">Estado S actual</div>
-        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;display:flex;flex-direction:column;gap:6px;">
-          <div style="display:flex;justify-content:space-between;font-size:0.8rem;">
-            <span style="color:var(--text-muted);">Precisión (a)</span>
-            <span id="stateA" style="font-family:var(--font-mono);color:var(--blue);font-weight:600;">–</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;font-size:0.8rem;">
-            <span style="color:var(--text-muted);">Dificultad (d)</span>
-            <span id="stateD" style="font-family:var(--font-mono);color:var(--blue);font-weight:600;">–</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;font-size:0.8rem;">
-            <span style="color:var(--text-muted);">Nivel</span>
-            <span id="stateLevel" style="font-weight:600;font-size:0.78rem;">–</span>
+        <div style="font-size:0.68rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-faint);margin-bottom:8px;">Nivel de dominio del tema</div>
+        <div id="topicDomainBox" style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;text-align:center;">
+          <div id="topicDomainPlaceholder" style="color:var(--text-muted);font-size:0.85rem;">Escoger un tema</div>
+          <div id="topicDomainValue" style="display:none;align-items:center;justify-content:center;gap:8px;">
+            <span id="topicDomainPercent" style="font-size:2rem;font-weight:700;font-family:var(--font-mono);">-</span>
+            <span id="topicDomainLabel" style="font-size:0.8rem;color:var(--text-muted);">dominio</span>
           </div>
         </div>
       </div>
-
-      <div class="sidebar-divider"></div>
-
-      <!-- Pilot mode toggle -->
-      <div style="padding: 4px 8px 12px;">
-        <div style="font-size:0.68rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-faint);margin-bottom:8px;">Modo de práctica</div>
-        <div style="display:flex;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;">
-          <button id="btnAdaptive" style="flex:1;padding:6px 0;font-size:0.78rem;font-weight:600;border:none;cursor:pointer;transition:background 0.2s,color 0.2s;background:var(--blue);color:#fff;">🧠 Adaptativo</button>
-          <button id="btnBaseline" style="flex:1;padding:6px 0;font-size:0.78rem;font-weight:600;border:none;cursor:pointer;transition:background 0.2s,color 0.2s;background:transparent;color:var(--text-muted);">📋 Tradicional</button>
-        </div>
-      </div>
-
+      
       <div class="sidebar-divider"></div>
 
       <div class="user-card">
@@ -193,7 +175,7 @@
   <script type="module" src="js/auth.js"></script>
   <script type="module" src="js/chat.js"></script>
   <script type="module" src="js/session.js"></script>
-  <script type="module" src="js/main.js"></script>
   <script type="module" src="js/profile.js"></script>
+  <script type="module" src="js/main.js"></script>
 </body>
 </html>

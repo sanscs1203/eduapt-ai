@@ -64,11 +64,33 @@ def load_question_bank():
     path = os.path.join(Path(__file__).parent, app.config['QUESTION_BANK_PATH'])
     if os.path.exists(path):
         with open(path, 'r', encoding='utf-8') as f:
-            QUESTION_BANK = json.load(f)
+            raw = json.load(f)
+
+        # Si el JSON es un diccionario plano (clave = ID, valor = pregunta con 'topic')
+        # lo reestructuramos a { topic: [lista de preguntas] }
+        if isinstance(raw, dict):
+            first_key = next(iter(raw))
+            first_val = raw[first_key]
+            # Si el primer elemento es un dict y tiene 'topic', asumimos estructura plana
+            if isinstance(first_val, dict) and 'topic' in first_val:
+                grouped = {}
+                for q in raw.values():
+                    topic = q.get('topic')
+                    if not topic:
+                        continue
+                    if topic not in grouped:
+                        grouped[topic] = []
+                    grouped[topic].append(q)
+                QUESTION_BANK = grouped
+            else:
+                # Ya está agrupado por tema (cada valor es una lista)
+                QUESTION_BANK = raw
+        else:
+            QUESTION_BANK = raw
+
         print(f"Question bank loaded: {sum(len(v) for v in QUESTION_BANK.values())} questions")
     else:
         print(f"WARN: Question bank not found at {path}")
-        QUESTION_BANK = {"polinomios": [{"id": "POL-01", "type": "Procedural", "difficulty": "Easy", "question": "Simplifica: (3x² + 2x) + (5x² − 7x)", "answer": "8x² − 5x", "resource_id": "REC-POL-01"}]}
 
 def load_resources_catalog():
     global RESOURCES_CATALOG
@@ -621,69 +643,77 @@ def models_status():
 def get_profile(uid):
     """Devuelve datos completos del perfil del estudiante."""
     try:
-        # Obtener datos del usuario desde Firebase
         user = firebase_client.get_user(uid)
         if not user:
-            return jsonify({'error': 'User not found'}), 404
+            return jsonify({'error': 'Usuario no encontrado'}), 404
 
-        # Obtener sesiones ordenadas por fecha
+        # --- Datos básicos del usuario ---
+        name = user.get('name', 'Estudiante')
+        prefs = user.get('preferences', [])  # puede ser None, aseguramos lista
+
+        # --- Estado actual (vector S) ---
+        S = user.get('S', {})
+        temas_actuales = S.get('a_temas', {})
+
+        # --- Ruta crítica (3 temas más débiles) ---
+        if temas_actuales:
+            weakest = sorted(temas_actuales.items(),
+                             key=lambda x: x[1].get('mastery', 0))[:3]
+            critical_path = [{'topic': t, 'mastery': v.get('mastery', 0)}
+                             for t, v in weakest]
+        else:
+            critical_path = []
+
+        # --- Dominio por tema ---
+        topic_mastery = {t: v.get('mastery', 0)
+                         for t, v in temas_actuales.items()}
+
+        # --- Historial de sesiones (evolución) ---
         sessions_ref = firebase_client.db.collection('sessions') \
             .where('uid', '==', uid) \
             .order_by('startedAt', direction=firestore.Query.ASCENDING) \
             .stream()
-        
-        sessions = []
-        mastery_history = []  # Para el gráfico
-        for i, doc in enumerate(sessions, start=1):
+
+        mastery_history = []
+        sessions_list = []
+        for i, doc in enumerate(sessions_ref, start=1):
             data = doc.to_dict()
             # Calcular dominio global de esa sesión (promedio de a_temas)
             S_end = data.get('S_end', {})
-            temas = S_end.get('a_temas', {})
-            if temas:
-                avg_mastery = sum(t.get('mastery', 0) for t in temas.values()) / len(temas)
+            temas_sesion = S_end.get('a_temas', {})
+            if temas_sesion:
+                avg_mastery = sum(t.get('mastery', 0) for t in temas_sesion.values()) / len(temas_sesion)
             else:
                 avg_mastery = data.get('accuracy', 0)
 
-            sessions.append({
+            sessions_list.append({
                 'session_number': i,
                 'topic': data.get('topic'),
                 'accuracy': data.get('accuracy', 0),
                 'total_questions': data.get('totalQuestions', 0),
-                'ended_at': data.get('endedAt', None)
+                'ended_at': data.get('endedAt')
             })
             mastery_history.append({
                 'session_number': i,
                 'global_mastery': round(avg_mastery, 3)
             })
 
-        # Preferencias
-        prefs = user.get('preferences', [])
-
-        # Ruta crítica (podemos simularla con los temas más débiles)
-        current_S = user.get('S', {})
-        temas_actuales = current_S.get('a_temas', {})
-        if temas_actuales:
-            weakest = sorted(temas_actuales.items(), key=lambda x: x[1].get('mastery', 0))[:3]
-            critical_path = [{'topic': t, 'mastery': v.get('mastery', 0)} for t, v in weakest]
-        else:
-            critical_path = []
-
-        # Nivel de dominio por tema
-        topic_mastery = {t: v.get('mastery', 0) for t, v in temas_actuales.items()}
+        total_sessions = len(sessions_list)
 
         profile = {
-            'name': user.get('name', 'Estudiante'),
+            'name': name,
             'preferences': prefs,
             'critical_path': critical_path,
-            'total_sessions': len(sessions),
+            'total_sessions': total_sessions,
             'topic_mastery': topic_mastery,
             'mastery_history': mastery_history
         }
 
         return jsonify(profile)
+
     except Exception as e:
-        print(f"Error obteniendo perfil: {e}")
-        return jsonify({'error': str(e)}), 500    
+        print(f"Error en perfil: {e}")
+        return jsonify({'error': str(e)}), 500
 
 # ----------------------------------------------------------------
 # Inicio

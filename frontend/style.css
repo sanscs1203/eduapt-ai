@@ -1318,3 +1318,9 @@ canvas#masteryChart {
   width: 100% !important;
   max-height: 250px;
 }
+#topicDomainBox {
+  transition: all 0.2s ease;
+}
+#topicDomainPlaceholder {
+  font-style: italic;
+}

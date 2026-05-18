@@ -147,6 +147,7 @@ window.handleMessage = async function(userMessage) {
         // Actualizar tópico en la UI si es relevante
         if (topic && topic !== 'social' && topic !== 'none') {
             window.currentTopic = topic;
+            window.updateStatePanelUI();
             const topbar = document.getElementById('topbarSubject');
             if (topbar) {
                 topbar.innerHTML = `
@@ -158,11 +159,15 @@ window.handleMessage = async function(userMessage) {
             }
         }
 
-        // Acciones automáticas según la intención detectada
-        if (intent === 'PRACTICE' && topic && topic !== 'social' && topic !== 'none') {
-            // Si el usuario quiere practicar, podemos iniciar una sesión directamente
-            // (opcional: preguntar antes; aquí lo hacemos automático)
-            if (!window.activeSession) {
+        // --- Acciones automáticas según intención y tópico ---
+        const hasTopic = topic && topic !== 'social' && topic !== 'none';
+        if (intent === 'PRACTICE') {
+            if (!hasTopic && window.currentTopic) {
+                // Si el usuario no mencionó tema, usar el tópico actual
+                topic = window.currentTopic;
+            }
+            if (topic && topic !== 'social') {
+                if (!window.activeSession) {
                 const q = await window.startSession(topic);
                 if (q) {
                     window.appendMessage(`¡De acuerdo! Comenzamos práctica de **${CONFIG.TOPIC_LABELS[topic]}**.`, 'bot');
@@ -170,31 +175,8 @@ window.handleMessage = async function(userMessage) {
                     window.pendingQuestion.deliveredAt = Date.now();
                     window.appendMessage(`**${q.question}**`, 'bot');
                 }
+                }
             }
-        } else if ((intent === 'EXPLAIN' || intent === 'DOUBT') && topic && topic !== 'social') {
-            // Podríamos sugerir recursos de estudio automáticamente
-            // (opcional, descomentar si quieres ofrecer recursos sin que el usuario los pida)
-            // await requestStudyResources(topic);
-        }
-
-            // --- Acciones automáticas según intención y tópico ---
-        const hasTopic = topic && topic !== 'social' && topic !== 'none';
-        if (intent === 'PRACTICE') {
-        if (!hasTopic && window.currentTopic) {
-            // Si el usuario no mencionó tema, usar el tópico actual
-            topic = window.currentTopic;
-        }
-        if (topic && topic !== 'social') {
-            if (!window.activeSession) {
-            const q = await window.startSession(topic);
-            if (q) {
-                window.appendMessage(`¡De acuerdo! Comenzamos práctica de **${CONFIG.TOPIC_LABELS[topic]}**.`, 'bot');
-                window.pendingQuestion = q;
-                window.pendingQuestion.deliveredAt = Date.now();
-                window.appendMessage(`**${q.question}**`, 'bot');
-            }
-            }
-        }
         } else if ((intent === 'EXPLAIN' || intent === 'DOUBT') && hasTopic) {
         // Ofrecer recursos si el usuario pide explicación sobre un tema concreto
         await requestStudyResources(topic);

@@ -1,5 +1,7 @@
 // frontend/js/utils.js
 
+window.chatVisible = false;
+
 // Obtener iniciales de un nombre (ej: "Juan Pérez" -> "JP")
 window.getInitial = function(name) {
     if (!name) return '?';
@@ -84,4 +86,13 @@ window.showToast = function(message, type = 'info') {
 window.renderText = function(text) {
     if (!text) return '';
     return text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+};
+
+// Muestra el área de chat y oculta la pantalla de bienvenida
+window.showChatArea = function() {
+    const welcome = document.getElementById('welcomeScreen');
+    if (welcome) welcome.style.display = 'none';
+    const messagesWrap = document.getElementById('messagesWrap');
+    if (messagesWrap) messagesWrap.style.display = 'flex';
+    window.chatVisible = true;
 };

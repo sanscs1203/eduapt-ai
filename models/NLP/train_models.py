@@ -130,7 +130,7 @@ modelos = {
 # Ajustes de búsqueda para completar en ~3-4 horas
 N_ITER = 5            # solo 5 combinaciones aleatorias por modelo
 CV_FOLDS = 5          # validación cruzada de 5 pliegues (como pides)
-N_JOBS = -1            # secuencial para no saturar la RAM
+N_JOBS = 6            # secuencial para no saturar la RAM
 
 best_intent_score = 0
 best_intent_model = None
