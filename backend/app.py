@@ -926,7 +926,7 @@ def get_profile(uid):
         if not user:
             return jsonify({'error': 'Usuario no encontrado'}), 404
         
-        name = user.get('name', 'Estudiante')
+        name = user.get('fullname') or user.get('name') or 'Estudiante'
         prefs = user.get('preferences', []) or []
         S = user.get('S', None)
 
