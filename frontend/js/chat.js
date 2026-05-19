@@ -10,10 +10,15 @@ function getMessagesContainer() {
     return container;
 }
 
+// Bug 2.7 — Auto-scroll con smooth + fallback inmediato
 function scrollToBottom() {
     const container = getMessagesContainer();
     if (container) {
         container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+        // Fallback para asegurar que llega al fondo tras render
+        setTimeout(() => {
+            container.scrollTop = container.scrollHeight;
+        }, 80);
     }
 }
 
@@ -35,7 +40,7 @@ function formatIntent(intent) {
     return labels[intent] || intent;
 }
 
-// --- Versión mejorada de appendMessage que recibe metadatos NLP ---
+// --- appendMessage: sin nlp-badge, con markdown + links, auto-scroll ---
 window.appendMessage = function(content, sender, meta = {}) {
     const container = getMessagesContainer();
     if (!container) return;
@@ -50,24 +55,18 @@ window.appendMessage = function(content, sender, meta = {}) {
     const bubble = document.createElement('div');
     bubble.className = 'msg-bubble';
 
+    // Convertir markdown básico a HTML seguro
     let htmlContent = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    // Bug 2.3 — Links en color azul claro, abren en nueva pestaña, sin mostrar dificultad
+    htmlContent = htmlContent.replace(
+        /\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g,
+        '<a href="$2" target="_blank" rel="noopener noreferrer" style="color:#60A5FA;">$1</a>'
+    );
     htmlContent = htmlContent.replace(/\n/g, '<br>');
-    bubble.innerHTML = `<div class="msg-text">${escapeHtml(htmlContent)}</div>`;
 
-    // Añadir badge NLP si es un mensaje del bot y hay metadatos
-    if (sender === 'bot' && meta.intent && meta.intent !== 'AMBIGUOUS') {
-        const badge = document.createElement('div');
-        badge.className = 'nlp-badge';
-        let badgeText = '';
-        if (meta.topic && meta.topic !== 'social' && meta.topic !== 'none') {
-            badgeText = `${formatIntent(meta.intent)} · ${meta.topic}`;
-        } else {
-            badgeText = formatIntent(meta.intent);
-        }
-        badge.textContent = badgeText;
-        badge.title = `Confianza: ${Math.round((meta.confidence || 0) * 100)}%`;
-        bubble.appendChild(badge);
-    }
+    bubble.innerHTML = `<div class="msg-text">${htmlContent}</div>`;
+
+    // Bug 2.4 — ELIMINADO: bloque nlp-badge que generaba badges de depuración
 
     row.appendChild(avatar);
     row.appendChild(bubble);
@@ -98,8 +97,9 @@ window.removeTyping = function() {
     if (typing) typing.remove();
 };
 
-// --- Lógica principal de mensajes (ahora usando NLP del backend) ---
+// --- Lógica principal de mensajes ---
 window.handleMessage = async function(userMessage) {
+
     if (!userMessage || isWaitingForResponse) return;
 
     const input = document.getElementById('msgInput');
@@ -108,7 +108,23 @@ window.handleMessage = async function(userMessage) {
     if (sendBtn) sendBtn.disabled = true;
     isWaitingForResponse = true;
 
-    // Mostrar el mensaje del usuario
+    // Bug 2.1 — Si hay pregunta pendiente, evaluar directamente sin pasar por /api/chat
+    if (window.pendingQuestion) {
+        window.appendMessage(userMessage, 'user');
+        if (input) input.value = '';
+        window.showTyping();
+        try {
+            await window.submitAnswer(userMessage, window.pendingQuestion);
+        } finally {
+            if (input) input.disabled = false;
+            if (sendBtn) sendBtn.disabled = false;
+            if (input) input.focus();
+            isWaitingForResponse = false;
+        }
+        return;
+    }
+
+    // Flujo normal de chat (NLP + LLM)
     window.appendMessage(userMessage, 'user');
     if (input) input.value = '';
 
@@ -124,7 +140,7 @@ window.handleMessage = async function(userMessage) {
             body: JSON.stringify({
                 message: userMessage,
                 uid: sessionStorage.getItem('edu_uid') || null,
-                topic: window.currentTopic || 'polinomios',   // tópico actual si existe
+                topic: window.currentTopic || 'polinomios',
                 S: window.studentS || null,
                 chat_session_id: chatSessionId
             })
@@ -139,9 +155,10 @@ window.handleMessage = async function(userMessage) {
 
         window.removeTyping();
 
-        const { reply, intent, topic, confidence } = data;
+        // Bug Fix — topic e intent como let para poder reasignar
+        const { reply, confidence } = data;
+        let { intent, topic } = data;
 
-        // Mostrar la respuesta con los metadatos NLP
         window.appendMessage(reply, 'bot', { intent, topic, confidence });
 
         // Actualizar tópico en la UI si es relevante
@@ -159,27 +176,24 @@ window.handleMessage = async function(userMessage) {
             }
         }
 
-        // --- Acciones automáticas según intención y tópico ---
+        // Acciones automáticas según intención
         const hasTopic = topic && topic !== 'social' && topic !== 'none';
-        if (intent === 'PRACTICE') {
+
+        if (intent === 'PRACTICE' || intent === 'QUIZ') {
+            // Usar topic activo si el NLP no detectó uno claro
             if (!hasTopic && window.currentTopic) {
-                // Si el usuario no mencionó tema, usar el tópico actual
                 topic = window.currentTopic;
             }
             if (topic && topic !== 'social') {
                 if (!window.activeSession) {
-                const q = await window.startSession(topic);
-                if (q) {
-                    window.appendMessage(`¡De acuerdo! Comenzamos práctica de **${CONFIG.TOPIC_LABELS[topic]}**.`, 'bot');
-                    window.pendingQuestion = q;
-                    window.pendingQuestion.deliveredAt = Date.now();
-                    window.appendMessage(`**${q.question}**`, 'bot');
-                }
+                    const q = await window.startSession(topic);
+                    if (q) {
+                        window.pendingQuestion = q;
+                        window.pendingQuestion.deliveredAt = Date.now();
+                        window.appendChoiceQuestion(q);
+                    }
                 }
             }
-        } else if ((intent === 'EXPLAIN' || intent === 'DOUBT') && hasTopic) {
-        // Ofrecer recursos si el usuario pide explicación sobre un tema concreto
-        await requestStudyResources(topic);
         }
 
     } catch (error) {
@@ -199,7 +213,7 @@ window.handleMessage = async function(userMessage) {
     }
 };
 
-// --- La función requestStudyResources se mantiene por si se necesita desde otros lugares ---
+// --- Buscar y mostrar recursos de estudio ---
 async function requestStudyResources(topic) {
     const uid = sessionStorage.getItem('edu_uid');
     const S = window.studentS;
@@ -211,9 +225,12 @@ async function requestStudyResources(topic) {
         });
         const data = await resp.json();
         if (data.resources && data.resources.length > 0) {
-            let msg = `📚 **Recursos para estudiar ${CONFIG.TOPIC_LABELS[topic] || topic}**\n\n*Según tu nivel actual y preferencias:*\n`;
+            let msg = `📚 **Recursos para estudiar ${CONFIG.TOPIC_LABELS[topic] || topic}**\n\n`;
+            // Bug 2.3 — Solo título como link, sin mostrar dificultad
             data.resources.forEach(r => {
-                msg += `- [${r.title} (${r.difficulty})](${r.url})  \n  _${r.description || ''}_\n`;
+                msg += `• **[${r.title}](${r.url})**`;
+                if (r.description) msg += `  ${r.description}`;
+                msg += '\n';
             });
             msg += '\nCuando te sientas preparado, escribe **"practicar"** para iniciar un test.';
             window.appendMessage(msg, 'bot');
@@ -238,7 +255,10 @@ window.resetChatSession = async function() {
         localStorage.removeItem('chatSessionId');
         const container = getMessagesContainer();
         if (container) container.innerHTML = '';
-        window.appendMessage('Soy tu tutor de álgebra. Puedo recomendarte material de estudio o iniciar una práctica. ¿En qué te ayudo?', 'bot');
+        window.appendMessage(
+            '¡Hola! Soy tu tutor de álgebra. Puedes pedirme **recursos para estudiar** (ej: "no sé nada de factorización") o iniciar una **práctica** con preguntas. Selecciona un tema en la barra lateral o escríbeme.',
+            'bot'
+        );
     } catch (error) {
         console.error(error);
     }
@@ -256,6 +276,9 @@ function escapeHtml(str) {
 document.addEventListener('DOMContentLoaded', () => {
     const container = getMessagesContainer();
     if (container && container.children.length === 0) {
-        window.appendMessage('¡Hola! Soy tu tutor de álgebra. Puedes pedirme **recursos para estudiar** (ej: "no sé nada de factorización") o iniciar una **práctica** con preguntas. Selecciona un tema en la barra lateral o escríbeme.', 'bot');
+        window.appendMessage(
+            '¡Hola! Soy tu tutor de álgebra. Puedes pedirme **recursos para estudiar** (ej: "no sé nada de factorización") o iniciar una **práctica** con preguntas. Selecciona un tema en la barra lateral o escríbeme.',
+            'bot'
+        );
     }
 });

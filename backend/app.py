@@ -7,10 +7,9 @@ import uuid
 import pickle
 from datetime import datetime
 
-import numpy as np              # <-- NLP INTEGRATION
-import joblib                   # <-- NLP INTEGRATION
-from scipy.sparse import hstack # <-- NLP INTEGRATION
-
+import numpy as np
+import joblib
+from scipy.sparse import hstack
 import pandas as pd
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -21,21 +20,54 @@ from firebase_client import FirebaseClient
 from agents.student_model import StudentModel
 from agents.answer_evaluator import AnswerEvaluator
 
-from recommenders.base_recommender import BaseRecommender
-from recommenders.knn_recommender import KNNByS
-from recommenders.svd_recommender import SVDRecommender
-from recommenders.random_forest_rec import RandomForestRecommender
-
 from llm.dialo_gpt_rag import DialoGPTRAGLLM
 from rag_engine import RAGEngine
 
-# --- NLP INTEGRATION: agregar raíz del proyecto al path ---
-# Esto permite que al cargar el pickle se encuentren las clases TextPreprocessor, etc.
-sys.path.insert(0, str(Path(__file__).parent))          # backend/
-sys.path.insert(0, str(Path(__file__).parent.parent))   # eduapt-ai/
+# ============================================================
+# Definición de la clase ContextualRecommender
+# ============================================================
+class ContextualRecommender:
+    def __init__(self, regressor, topic_enc, diff_enc, item_type_enc, intent_enc, feature_columns):
+        self.regressor = regressor
+        self.topic_enc = topic_enc
+        self.diff_enc = diff_enc
+        self.item_type_enc = item_type_enc
+        self.intent_enc = intent_enc
+        self.feature_columns = feature_columns
+
+    def recommend(self, uid, topic, intent, mastery, streak, items_df, n=5):
+        if intent in ["EXPLAIN", "DOUBT"]:
+            filtered = items_df[items_df["item_type"] == "resource"]
+        elif intent in ["PRACTICE", "QUIZ"]:
+            filtered = items_df[items_df["item_type"] == "question"]
+        else:
+            filtered = items_df.copy()
+
+        filtered = filtered[filtered["topic"] == topic]
+        if filtered.empty:
+            return []
+
+        X = filtered.copy()
+        X["topic_enc"] = self.topic_enc.transform(X["topic"])
+        X["difficulty_enc"] = self.diff_enc.transform(X["difficulty"])
+        X["item_type_enc"] = self.item_type_enc.transform(X["item_type"])
+        X["mastery_before"] = mastery
+        X["streak_before"] = streak
+        intent_enc = self.intent_enc.transform([intent])[0]
+        X["intent_enc"] = intent_enc
+
+        scores = self.regressor.predict(X[self.feature_columns])
+        X["score"] = scores
+        return X.nlargest(n, "score")["item_id"].tolist()
+
+# ----------------------------------------------------------------
+# Inicialización de Flask
+# ----------------------------------------------------------------
+sys.path.insert(0, str(Path(__file__).parent))
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/api/*": {"origins": "*"}})
 app.config.from_object(Config)
 
 firebase_client = FirebaseClient()
@@ -45,7 +77,7 @@ student_model = StudentModel()
 QUESTION_BANK = {}
 RESOURCES_CATALOG = {}
 
-recommenders = {'knn': None, 'svd': None, 'rf': None}
+best_recommender = None
 
 rag_engine = RAGEngine()
 llm_chat = None
@@ -53,11 +85,10 @@ llm_chat = None
 active_sessions = {}
 chat_histories = {}
 
-# --- NLP INTEGRATION: pipeline global ---
 nlp_pipeline = None
 
 # ----------------------------------------------------------------
-# Carga inicial
+# Carga de datos y modelos
 # ----------------------------------------------------------------
 def load_question_bank():
     global QUESTION_BANK
@@ -65,13 +96,9 @@ def load_question_bank():
     if os.path.exists(path):
         with open(path, 'r', encoding='utf-8') as f:
             raw = json.load(f)
-
-        # Si el JSON es un diccionario plano (clave = ID, valor = pregunta con 'topic')
-        # lo reestructuramos a { topic: [lista de preguntas] }
         if isinstance(raw, dict):
             first_key = next(iter(raw))
             first_val = raw[first_key]
-            # Si el primer elemento es un dict y tiene 'topic', asumimos estructura plana
             if isinstance(first_val, dict) and 'topic' in first_val:
                 grouped = {}
                 for q in raw.values():
@@ -83,14 +110,16 @@ def load_question_bank():
                     grouped[topic].append(q)
                 QUESTION_BANK = grouped
             else:
-                # Ya está agrupado por tema (cada valor es una lista)
                 QUESTION_BANK = raw
         else:
             QUESTION_BANK = raw
-
         print(f"Question bank loaded: {sum(len(v) for v in QUESTION_BANK.values())} questions")
     else:
         print(f"WARN: Question bank not found at {path}")
+        
+    print("Preguntas por tema:")
+    for topic, qlist in QUESTION_BANK.items():
+        print(f"  {topic}: {len(qlist)} preguntas")
 
 def load_resources_catalog():
     global RESOURCES_CATALOG
@@ -118,35 +147,60 @@ def load_resources_catalog():
     else:
         print(f"WARN: resources.json not found at {path}")
 
-def load_recommenders():
-    for name, cls in [('knn', KNNByS), ('svd', SVDRecommender), ('rf', RandomForestRecommender)]:
-        path = os.path.join(app.config['MODELS_DIR'], f'{name}_model.pkl')
-        if os.path.exists(path):
-            with open(path, 'rb') as f:
-                recommenders[name] = pickle.load(f)
-            print(f"Loaded {name} recommender")
-        else:
-            print(f"Model {name} not found, will use static fallback")
+def load_best_recommender():
+    global best_recommender
+    comp_path = os.path.join(Path(__file__).parent.parent, 'models', 'Recommenders', 'results', 'recommender_components.pkl')
+    if os.path.exists(comp_path):
+        with open(comp_path, 'rb') as f:
+            comp = pickle.load(f)
+        best_recommender = ContextualRecommender(
+            comp['regressor'],
+            comp['topic_enc'],
+            comp['diff_enc'],
+            comp['item_type_enc'],
+            comp['intent_enc'],
+            comp['feature_columns']
+        )
+        print("✅ Mejor recomendador contextual cargado")
+    else:
+        print("⚠️ No se encontró recommender_components.pkl, usando fallback estático")
+
+def build_full_items_df():
+    rows = []
+    for topic, questions in QUESTION_BANK.items():
+        for q in questions:
+            rows.append({
+                'item_id': q['id'],
+                'topic': topic,
+                'difficulty': q.get('difficulty', 'Medium'),
+                'item_type': 'question'
+            })
+    for topic, resources in RESOURCES_CATALOG.items():
+        for r in resources:
+            rows.append({
+                'item_id': r['id'],
+                'topic': topic,
+                'difficulty': r.get('difficulty', 'Medium'),
+                'item_type': 'resource'
+            })
+    return pd.DataFrame(rows)
 
 def init_llm():
     global llm_chat
     try:
         llm_chat = DialoGPTRAGLLM(rag_engine=rag_engine)
-        print("✅ DialoGPT-RAG cargado (único modelo conversacional)")
+        print("✅ DialoGPT-RAG cargado")
     except Exception as e:
         print(f"❌ Error cargando DialoGPT-RAG: {e}")
         llm_chat = None
 
-# --- NLP INTEGRATION: cargar modelo NLP ---
 def load_nlp_model():
     global nlp_pipeline
-    nlp_model_path = os.path.join(
-        Path(__file__).parent.parent, 'models', 'NLP', 'results', 'best_nlp_model.pkl'
-    )
+    nlp_model_path = os.path.join(Path(__file__).parent.parent, 'models', 'NLP', 'results', 'best_nlp_model.pkl')
     if os.path.exists(nlp_model_path):
         try:
             nlp_pipeline = joblib.load(nlp_model_path)
-            print("✅ Modelo NLP (intent/topic) cargado correctamente")
+            print("✅ Modelo NLP cargado")
         except Exception as e:
             print(f"❌ Error cargando modelo NLP: {e}")
             nlp_pipeline = None
@@ -155,21 +209,28 @@ def load_nlp_model():
         nlp_pipeline = None
 
 # ----------------------------------------------------------------
-# Helpers
+# Funciones auxiliares
 # ----------------------------------------------------------------
 def pick_question(topic, S, used_ids, mode='adaptive'):
+    import random
     pool = QUESTION_BANK.get(topic, [])
+    print(f"Buscando preguntas para {topic}: {len(pool)} disponibles")
     if not pool:
         return None
     available = [q for q in pool if q['id'] not in used_ids]
     if not available:
-        available = pool
+        available = pool[:]
     if mode == 'baseline':
-        return available[0] if available else None
-    target_diff = student_model.get_target_difficulty(S)
+        return random.choice(available)
+    target_diff = student_model.get_target_difficulty(S, topic=topic)
     diff_order = {'Easy': 0, 'Medium': 1, 'Hard': 2}
-    available.sort(key=lambda q: abs(diff_order.get(q.get('difficulty', 'Medium'), 1) - diff_order[target_diff]))
-    return available[0] if available else None
+    target_num = diff_order.get(target_diff, 1)
+    same_diff = [q for q in available if diff_order.get(q.get('difficulty', 'Medium'), 1) == target_num]
+    if same_diff:
+        return random.choice(same_diff)
+    min_dist = min(abs(diff_order.get(q.get('difficulty', 'Medium'), 1) - target_num) for q in available)
+    closest = [q for q in available if abs(diff_order.get(q.get('difficulty', 'Medium'), 1) - target_num) == min_dist]
+    return random.choice(closest)
 
 def find_question_by_id(qid):
     for topic, questions in QUESTION_BANK.items():
@@ -180,20 +241,98 @@ def find_question_by_id(qid):
                 return q
     return None
 
-def build_questions_df():
-    """Construye un DataFrame con todas las preguntas para los recomendadores."""
-    rows = []
-    for topic, questions in QUESTION_BANK.items():
-        for q in questions:
-            q_copy = q.copy()
-            q_copy['topic'] = topic
-            rows.append(q_copy)
-    return pd.DataFrame(rows)
+def find_resource_by_id(rid):
+    for topic, resources in RESOURCES_CATALOG.items():
+        for r in resources:
+            if r['id'] == rid:
+                return r
+    return None
 
-# --- NLP INTEGRATION: predictor de intención y tópico ---
-def predict_intent_topic(texto_usuario, umbral_confianza=0.1):
+def update_mastery_for_topic(S, topic, delta):
+    """Aplica un delta (ej. +0.05) al mastery del tema en el vector S."""
+    if isinstance(S, list):
+        for t in S:
+            if t.get('topic') == topic:
+                new_mastery = t.get('mastery', 0.5) + delta
+                t['mastery'] = max(0.0, min(1.0, new_mastery))
+                break
+    elif isinstance(S, dict) and 'a_temas' in S:
+        if topic in S['a_temas']:
+            old = S['a_temas'][topic].get('mastery', 0.5)
+            new_mastery = old + delta
+            S['a_temas'][topic]['mastery'] = max(0.0, min(1.0, new_mastery))
+    return S
+
+def calcular_global_mastery(S_vector):
+    """
+    Calcula el mastery global ponderado a partir del vector S.
+    Da más peso a los temas con menor dominio.
+    Espera S_vector con estructura {'a_temas': {tema: {'mastery': float}}}
+    """
+    temas = S_vector.get('a_temas', {})
+    if not temas:
+        return 0.0
+    numerador = 0.0
+    denominador = 0.0
+    for datos in temas.values():
+        if isinstance(datos, dict):
+            m = datos.get('mastery', 0)
+        else:
+            m = float(datos) if isinstance(datos, (int, float)) else 0
+        peso = 1 - m
+        numerador += peso * m
+        denominador += peso
+    if denominador == 0:
+        return 0.0
+    return numerador / denominador
+
+# ----------------------------------------------------------------
+# NLP helper
+# ----------------------------------------------------------------
+def predict_intent_topic(texto_usuario, current_topic=None, umbral_confianza=0.35):
     if nlp_pipeline is None:
         return 'UNKNOWN', 'none', 0.0
+
+    msg_lower = texto_usuario.lower().strip()
+
+    gracias_words = ['gracias', 'graciass', 'agradezco', 'thanks', 'ty', 'grax']
+    goodbye_words = ['chao', 'adios', 'bye', 'nos vemos', 'hasta luego', 'me voy',
+                     'hasta mañana', 'terminé', 'termine', 'me despido', 'cuidate']
+    greeting_words = ['hola', 'buenas', 'hey', 'alo', 'saludos', 'buen día', 'buen dia',
+                      'buenas tardes', 'buenas noches', 'que tal', 'cómo vas', 'como vas']
+    casual_words = ['xd', 'jaja', 'jeje', 'lol', 'toy cansao', 'que pereza', 'me aburro',
+                    'no quiero estudiar', 'tengo sueño', 'me duele la cabeza',
+                    'que flojera', 'me estreso', 'ayuda que no entiendo nada']
+
+    if any(w in msg_lower for w in greeting_words) and len(msg_lower.split()) <= 5:
+        return 'GREETING', 'social', 1.0
+    if any(w in msg_lower for w in goodbye_words) and len(msg_lower.split()) <= 5:
+        return 'GOODBYE', 'social', 1.0
+    if any(w in msg_lower for w in gracias_words) and len(msg_lower.split()) <= 6:
+        return 'THANKS', 'social', 1.0
+    if any(w in msg_lower for w in casual_words):
+        return 'CASUAL', 'social', 1.0
+    if len(msg_lower) < 3 or msg_lower.replace('?','').replace('!','').replace('.','').strip() == '':
+        return 'UNKNOWN', 'none', 1.0
+
+    study_keywords = [
+        'estudiar', 'estudio', 'estudiar teoría', 'ver teoría', 'recursos',
+        'explicar', 'explicación', 'quiero estudiar', 'necesito estudiar',
+        'estudiar el tema', 'ver recursos', 'dame recursos',
+        'material de estudio', 'teoría', 'aprender', 'leer',
+        'necesito teoría', 'quiero teoría', 'ver material'
+    ]
+    practice_keywords = [
+        'practicar', 'practica', 'ejercicios', 'hacer ejercicios',
+        'práctica', 'quiz', 'quiero practicar', 'necesito practicar',
+        'test', 'preguntas', 'empezar práctica', 'comenzar práctica',
+        'hacer test', 'tomar quiz'
+    ]
+
+    if any(kw in msg_lower for kw in study_keywords):
+        return 'EXPLAIN', current_topic if current_topic else 'none', 1.0
+    if any(kw in msg_lower for kw in practice_keywords):
+        return 'PRACTICE', current_topic if current_topic else 'none', 1.0
 
     preprocessor = nlp_pipeline['preprocessor']
     word_vectorizer = nlp_pipeline['word_vectorizer']
@@ -219,10 +358,17 @@ def predict_intent_topic(texto_usuario, umbral_confianza=0.1):
     intent_probs = get_probs(model_intent, X_final)
     idx_max = np.argmax(intent_probs)
     max_prob = intent_probs[idx_max]
-    if max_prob < umbral_confianza:
-        return 'AMBIGUOUS', 'none', float(max_prob)
-
     intent_detectado = intent_classes[idx_max]
+
+    if max_prob < 0.4:
+        if any(w in msg_lower for w in gracias_words):
+            return 'THANKS', 'social', max_prob
+        if any(w in msg_lower for w in greeting_words):
+            return 'GREETING', 'social', max_prob
+        if any(w in msg_lower for w in goodbye_words):
+            return 'GOODBYE', 'social', max_prob
+        if max_prob < umbral_confianza:
+            return 'AMBIGUOUS', 'none', float(max_prob)
 
     intents_sociales = {"GREETING", "GOODBYE", "CASUAL", "ABOUT", "THANKS"}
     if intent_detectado in intents_sociales:
@@ -235,6 +381,56 @@ def predict_intent_topic(texto_usuario, umbral_confianza=0.1):
     return intent_detectado, topic_detectado, float(max_prob)
 
 # ----------------------------------------------------------------
+# Función para obtener recomendaciones en el chat
+# ----------------------------------------------------------------
+def get_recommendations_for_chat(uid, topic, intent, S, n=3):
+    if best_recommender is None:
+        return []
+    mastery = 0.5
+    streak = 0
+    if isinstance(S, list):
+        for t in S:
+            if t.get('topic') == topic:
+                mastery = t.get('mastery', 0.5)
+                streak = t.get('streak', 0)
+                break
+    elif isinstance(S, dict) and 'a_temas' in S:
+        tema = S['a_temas'].get(topic, {})
+        mastery = tema.get('mastery', 0.5)
+        streak = tema.get('streak', 0)
+    items_df = build_full_items_df()
+    try:
+        recommended_ids = best_recommender.recommend(
+            uid, topic, intent, mastery, streak, items_df, n=n
+        )
+        resources = []
+        for item_id in recommended_ids:
+            q = find_question_by_id(item_id)
+            if q:
+                resources.append({
+                    'id': item_id,
+                    'title': q.get('question', '')[:100],
+                    'type': 'question',
+                    'difficulty': q.get('difficulty'),
+                    'justification': f"Recomendado según tu dominio ({mastery:.2f})"
+                })
+            else:
+                r = find_resource_by_id(item_id)
+                if r:
+                    resources.append({
+                        'id': item_id,
+                        'title': r['title'],
+                        'url': r['url'],
+                        'type': 'resource',
+                        'difficulty': r.get('difficulty'),
+                        'justification': f"Recurso sugerido para {intent}"
+                    })
+        return resources[:n]
+    except Exception as e:
+        print(f"Error en recomendador desde chat: {e}")
+        return []
+
+# ----------------------------------------------------------------
 # Endpoints
 # ----------------------------------------------------------------
 @app.route('/api/health', methods=['GET'])
@@ -242,9 +438,9 @@ def health():
     return jsonify({
         'status': 'ok',
         'question_bank_loaded': len(QUESTION_BANK) > 0,
-        'recommenders_loaded': [name for name, m in recommenders.items() if m is not None],
+        'recommender_loaded': best_recommender is not None,
         'llm_available': llm_chat is not None,
-        'nlp_model_available': nlp_pipeline is not None   # <-- NLP INTEGRATION
+        'nlp_model_available': nlp_pipeline is not None
     })
 
 @app.route('/api/session/start', methods=['POST'])
@@ -271,9 +467,12 @@ def session_start():
         'start_time': datetime.utcnow(),
         'questions': [],
         'S': S,
-        'used_questions': set()
+        'used_questions': set(),
+        'max_questions': 3,
+        'question_count': 0
     }
     question = pick_question(topic, S, set(), mode)
+    print(f"DEBUG: Primera pregunta para {topic}: {question}")
     return jsonify({'session_id': session_id, 'first_question': question})
 
 @app.route('/api/session/next', methods=['POST'])
@@ -327,7 +526,12 @@ def evaluate():
         print(f"Error saving interaction: {e}")
     used = session['used_questions']
     used.add(question_id)
-    next_question = pick_question(session['topic'], new_S, used, session['mode'])
+    session['question_count'] = session.get('question_count', 0) + 1
+    max_q = session.get('max_questions', 3)
+    if session['question_count'] >= max_q:
+        next_question = None
+    else:
+        next_question = pick_question(session['topic'], new_S, used, session['mode'])
     resource = {'title': f"Recurso: {question.get('id', '')}", 'url': '#', 'type': question.get('type', '')}
     rid = question.get('resource_id')
     if rid and RESOURCES_CATALOG:
@@ -344,10 +548,26 @@ def evaluate():
             else:
                 continue
             break
-    tier = student_model.get_tier(new_S)
-    explanation = f"Tu precisión actual es {new_S['a']:.2f} (nivel: {tier}). Has respondido {'correctamente' if result['is_correct'] else 'incorrectamente'} a esta pregunta de dificultad {question.get('difficulty', 'Medium')} en {question.get('topic', session['topic'])}."
-    return jsonify({'is_correct': result['is_correct'], 'explanation': result['explanation'], 'S_new': new_S, 'next_question': next_question, 'resource': resource, 'xai_explanation': explanation})
-
+    if isinstance(new_S, list):
+        topic_key = question.get('topic', session['topic'])
+        topic_data = next((t for t in new_S if t.get('topic') == topic_key), {})
+        _s_for_tier = {'a': topic_data.get('mastery', 0.5)}
+    else:
+        _s_for_tier = new_S
+    tier = student_model.get_tier(_s_for_tier)
+    mastery_val = topic_data.get('mastery', 0.5) if isinstance(new_S, list) else new_S.get('a', 0.5)
+    topic_key = question.get('topic', session['topic'])
+    explanation = f"Tu precisión actual es {mastery_val:.2f} (nivel: {tier}). Has respondido {'correctamente' if result['is_correct'] else 'incorrectamente'} a esta pregunta de dificultad {question.get('difficulty', 'Medium')} en {topic_key}."
+    return jsonify({
+        'is_correct': result['is_correct'],
+        'explanation': result['explanation'],
+        'S_new': new_S,
+        'next_question': next_question,
+        'resource': resource,
+        'xai_explanation': explanation,
+        'session_complete': next_question is None
+    })
+    
 @app.route('/api/session/close', methods=['POST'])
 def session_close():
     data = request.get_json()
@@ -358,17 +578,13 @@ def session_close():
     questions = session['questions']
     if not questions:
         return jsonify({'message': 'No questions answered'})
-
-    # --- Actualizar estado S del usuario en Firestore ---
     uid = session.get('uid')
     if uid:
-        firebase_client.update_user_S(uid, session['S'])   # session['S'] ya tiene el último estado
-
+        firebase_client.update_user_S(uid, session['S'])
     total = len(questions)
     correct = sum(1 for q in questions if q['correct'])
     accuracy = correct / total if total else 0
     total_time = sum(q.get('time_spent', 0) for q in questions)
-
     metrics = {
         'session_id': session_id,
         'topic': session['topic'],
@@ -380,7 +596,7 @@ def session_close():
         'totalTimeSec': round(total_time, 1),
         'avgTimeSec': round(total_time / total, 1) if total else 0,
         'suggestedPath': 'Seguir practicando para mejorar la precisión.',
-        'S_end': session['S']
+        'S_end': session['S']   # ✅ nombre corregido
     }
     try:
         firebase_client.save_session({
@@ -396,14 +612,13 @@ def session_close():
             'correctCount': correct,
             'accuracy': accuracy,
             'totalTimeSec': total_time,
-            'questions': questions
+            'questions': questions,
+            'S_end': session['S']   # ✅ también aquí
         })
     except Exception as e:
         print(f"Error saving session: {e}")
-
     return jsonify(metrics)
 
-# --- ENDPOINT DE RECURSOS DE ESTUDIO ---
 @app.route('/api/resources', methods=['POST'])
 def get_study_resources():
     data = request.get_json()
@@ -411,7 +626,6 @@ def get_study_resources():
     topic = data.get('topic')
     if not topic:
         return jsonify({'error': 'Topic required'}), 400
-
     S = data.get('S')
     if not S and uid:
         user = firebase_client.get_user(uid)
@@ -419,16 +633,12 @@ def get_study_resources():
             S = user['S']
     if not S:
         S = student_model.initial_state('mid')
-
-    target_diff = student_model.get_target_difficulty(S)
+    target_diff = student_model.get_target_difficulty(S, topic=topic)
     diff_order = {'Easy': 0, 'Medium': 1, 'Hard': 2}
-
     resources_pool = RESOURCES_CATALOG.get(topic, [])
     if not resources_pool:
         return jsonify({'resources': []})
-
     resources_pool.sort(key=lambda r: abs(diff_order.get(r['difficulty'], 'Medium') - diff_order[target_diff]))
-
     prefs = []
     if uid:
         user = firebase_client.get_user(uid)
@@ -443,119 +653,130 @@ def get_study_resources():
         filtered = [r for r in resources_pool if r['format'] in allowed_formats]
         if filtered:
             resources_pool = filtered
-
     return jsonify({'resources': resources_pool[:4]})
 
-# --- ENDPOINT RECOMMEND (USA MODELOS) ---
 @app.route('/api/recommend', methods=['POST'])
 def recommend():
     data = request.get_json()
     uid = data.get('uid')
     topic = data.get('topic')
-    mode = data.get('mode', 'adaptive')
+    intent = data.get('intent', 'PRACTICE')
     S = data.get('S')
-    model_name = request.args.get('model', 'knn')
+    if not topic:
+        return jsonify({'error': 'Topic required'}), 400
     if not S and uid:
         user = firebase_client.get_user(uid)
         if user and 'S' in user:
             S = user['S']
     if not S:
-        S = student_model.initial_state()
-
-    model = recommenders.get(model_name)
+        S = student_model.initial_state('mid')
+    mastery = 0.5
+    streak = 0
+    if isinstance(S, list):
+        for t in S:
+            if t.get('topic') == topic:
+                mastery = t.get('mastery', 0.5)
+                streak = t.get('streak', 0)
+                break
+    elif isinstance(S, dict) and 'a_temas' in S:
+        tema = S['a_temas'].get(topic, {})
+        mastery = tema.get('mastery', 0.5)
+        streak = tema.get('streak', 0)
     resources = []
     model_used = 'static'
-    questions_df = build_questions_df()
-
-    if model:
+    if best_recommender:
+        items_df = build_full_items_df()
         try:
-            if model_name == 'knn':
-                recommended_ids = model.recommend(S, topic, questions_df, top_n=3)
-            elif model_name == 'svd':
-                # SVD necesita un uid; usamos el real o un dummy
-                svd_uid = uid or 'dummy'
-                recommended_ids = model.recommend(svd_uid, topic, questions_df, top_n=3)
-            elif model_name == 'rf':
-                recommended_ids = model.recommend(S, topic, questions_df, top_n=3)
-            else:
-                recommended_ids = []
-
-            for qid in recommended_ids:
-                q = find_question_by_id(qid)
+            recommended_ids = best_recommender.recommend(
+                uid, topic, intent, mastery, streak, items_df, n=5
+            )
+            for item_id in recommended_ids:
+                q = find_question_by_id(item_id)
                 if q:
                     resources.append({
-                        'id': qid,
-                        'title': q['question'][:60],
-                        'url': q.get('resource_id', '#'),  # aquí conviene mostrar el título del recurso luego
-                        'type': q.get('type', ''),
-                        'justification': f"Recomendado por modelo {model_name.upper()} porque tu precisión ({S['a']:.2f}) y nivel ({student_model.get_tier(S)}) indican que este recurso es adecuado."
+                        'id': item_id,
+                        'title': q.get('question', '')[:80],
+                        'type': 'question',
+                        'difficulty': q.get('difficulty'),
+                        'justification': f"Recomendado por IA según tu dominio ({mastery:.2f}) y la intención {intent}"
                     })
-            model_used = model_name
+                else:
+                    r = find_resource_by_id(item_id)
+                    if r:
+                        resources.append({
+                            'id': item_id,
+                            'title': r['title'],
+                            'url': r['url'],
+                            'type': 'resource',
+                            'difficulty': r.get('difficulty'),
+                            'justification': f"Recurso sugerido por IA para {intent} (dominio {mastery:.2f})"
+                        })
+            model_used = 'ContextualRecommender'
         except Exception as e:
-            print(f"Recommender {model_name} failed: {e}")
-
+            print(f"Error en recomendador: {e}")
     if len(resources) < 3:
-        pool = QUESTION_BANK.get(topic, [])
-        for q in pool:
+        pool = QUESTION_BANK.get(topic, []) + RESOURCES_CATALOG.get(topic, [])
+        for item in pool:
             if len(resources) >= 3:
                 break
-            if not any(r['id'] == q['id'] for r in resources):
+            if not any(r['id'] == item['id'] for r in resources):
                 resources.append({
-                    'id': q['id'],
-                    'title': q['question'][:60],
-                    'url': q.get('resource_id', '#'),
-                    'type': q.get('type', ''),
-                    'justification': f"Recurso del tema {topic} para reforzar conceptos."
+                    'id': item['id'],
+                    'title': item.get('question', item.get('title', ''))[:80],
+                    'type': 'question' if 'question' in item else 'resource',
+                    'difficulty': item.get('difficulty', 'Medium'),
+                    'justification': f"Complemento estático del tema {topic}"
                 })
-
-    # Filtro por preferencias
-    prefs = []
-    if uid:
-        user = firebase_client.get_user(uid)
-        if user:
-            prefs = user.get('preferences', [])
-    if prefs and RESOURCES_CATALOG:
-        pref_to_format = {
-            'video': 'interactive', 'exercises': 'interactive',
-            'text': 'text', 'examples': 'interactive', 'formulas': 'text'
-        }
-        allowed = [pref_to_format[p] for p in prefs if p in pref_to_format]
-        if allowed:
-            filtered = []
-            for r in resources:
-                # Buscar el formato del recurso asociado (si tiene resource_id)
-                res_id = r.get('url')  # temporal, realmente deberíamos buscar por qid -> resource_id
-                # mejor buscar por el id de pregunta
-                q = find_question_by_id(r['id'])
-                if q and q.get('resource_id'):
-                    rid = q['resource_id']
-                    for topic_res in RESOURCES_CATALOG.values():
-                        for rec in topic_res:
-                            if rec['id'] == rid and rec['format'] in allowed:
-                                filtered.append(r)
-                                break
-            if filtered:
-                resources = filtered
-
-    return jsonify({'resources': resources[:3], 'model_used': model_used})
+    return jsonify({
+        'resources': resources[:3],
+        'model_used': model_used,
+        'intent_used': intent,
+        'mastery': mastery
+    })
 
 @app.route('/api/feedback', methods=['POST'])
 def feedback():
     data = request.get_json()
+    uid = data.get('uid')
+    topic = data.get('topic')
+    useful = data.get('useful', False)
+    too_easy = data.get('too_easy', False)
+    too_hard = data.get('too_hard', False)
     try:
+        # Guardar feedback original
         firebase_client.save_feedback({
-            'uid': data.get('uid'),
+            'uid': uid,
             'sessionId': data.get('session_id'),
-            'topic': data.get('topic'),
+            'topic': topic,
             'questionId': data.get('question_id'),
-            'useful': data.get('useful', False),
+            'useful': useful,
             'createdAt': firestore.SERVER_TIMESTAMP
         })
+        # Actualizar mastery según feedback
+        if useful or too_easy:
+            delta = +0.05
+        elif too_hard:
+            delta = -0.05
+        else:
+            delta = 0
+        if delta != 0 and uid and topic:
+            user = firebase_client.get_user(uid)
+            if user and 'S' in user:
+                S = user['S']
+                S = update_mastery_for_topic(S, topic, delta)
+                firebase_client.update_user_S(uid, S)
+                # Si hay sesión activa, actualizarla también
+                for sess_id, sess in active_sessions.items():
+                    if sess.get('uid') == uid:
+                        sess['S'] = update_mastery_for_topic(sess['S'], topic, delta)
+                # Devolver el nuevo S en la respuesta
+                return jsonify({'status': 'ok', 'S': S})
+        return jsonify({'status': 'ok'})
     except Exception as e:
         print(f"Error saving feedback: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
     return jsonify({'status': 'ok'})
 
-# --- ENDPOINT CHAT (MODIFICADO CON NLP) ---
 @app.route('/api/chat', methods=['POST'])
 def chat():
     global llm_chat
@@ -565,15 +786,10 @@ def chat():
     S = data.get('S')
     topic = data.get('topic')
     chat_session_id = data.get('chat_session_id')
-
     if not chat_session_id:
         chat_session_id = f"chat_{uuid.uuid4().hex[:12]}"
-
-    # --- NLP: detección de intención y tópico ---
-    intent, detected_topic, conf = predict_intent_topic(message)
-    # Mantener el tópico actual si la detección es social o poco fiable
-    final_topic = detected_topic if detected_topic != 'social' and conf > 0.60 else topic
-
+    intent, detected_topic, conf = predict_intent_topic(message, topic)
+    final_topic = detected_topic if detected_topic != 'social' and conf > 0.35 else topic
     if intent == 'AMBIGUOUS':
         return jsonify({
             'reply': "No logré comprender del todo tu solicitud. ¿Podrías reformularla?",
@@ -582,7 +798,54 @@ def chat():
             'confidence': conf,
             'chat_session_id': chat_session_id
         })
+    social_responses = {
+        "GREETING": "¡Hola! ¿En qué tema te ayudo hoy?",
+        "GOODBYE": "¡Hasta luego! Sigue practicando.",
+        "THANKS": "¡De nada! Estoy aquí para ayudarte.",
+        "CASUAL": "😊 ¿Quieres que practiquemos algún tema?"
+    }
+    if intent in social_responses:
+        return jsonify({
+            'reply': social_responses[intent],
+            'intent': intent,
+            'topic': final_topic,
+            'confidence': conf,
+            'chat_session_id': chat_session_id
+        })
 
+    # Respuestas académicas con recomendador
+    if intent in ('EXPLAIN', 'DOUBT', 'PRACTICE', 'QUIZ'):
+        topic_to_use = final_topic if final_topic not in ('social','none') else (topic or 'polinomios')
+        recommended_resources = get_recommendations_for_chat(uid, topic_to_use, intent, S, n=3)
+
+        if intent in ('EXPLAIN','DOUBT'):
+            reply_text = f"📚 He preparado estos recursos para que estudies **{topic_to_use}** según tu perfil:\n"
+            if recommended_resources:
+                lines = []
+                for idx, res in enumerate(recommended_resources, 1):
+                    if res['type'] == 'question':
+                        lines.append(f"{idx}. {res['title']}")
+                    else:
+                        url = res.get('url', '#')
+                        lines.append(f"{idx}. [{res['title']}]({url})")
+                reply_text += "\n".join(lines)
+                reply_text += "\n\nCuando estudies el material, escribe **\"practicar\"** para realizar un pequeño cuestionario."
+            else:
+                reply_text = f"Lo siento, no encontré recursos para {topic_to_use}. Intenta más tarde."
+        else:  # PRACTICE o QUIZ
+            reply_text = f"✏️ De acuerdo, vamos a practicar **{topic_to_use}** con preguntas adaptadas a tu nivel.\n\nTe haré 3 preguntas. ¡Empecemos!"
+
+        return jsonify({
+            'reply': reply_text,
+            'model_used': 'recommender',
+            'intent': intent,
+            'topic': topic_to_use,
+            'confidence': 1.0,
+            'resources': recommended_resources if intent in ('EXPLAIN','DOUBT') else [],
+            'chat_session_id': chat_session_id
+        })
+
+    # Fallback a LLM
     if llm_chat is None:
         return jsonify({
             'reply': 'El tutor aún no está listo. Intenta en unos segundos.',
@@ -598,19 +861,16 @@ def chat():
         'mode': data.get('mode', 'adaptive'),
         'chat_history': history
     }
-
     try:
         reply = llm_chat.generate(message, context)
     except Exception as e:
         print(f"Error en chat: {e}")
         reply = "Lo siento, ocurrió un error. Por favor intenta de nuevo."
-
     history.append({"role": "user", "content": message})
     history.append({"role": "assistant", "content": reply})
     if len(history) > 10:
         history = history[-10:]
     chat_histories[chat_session_id] = history
-
     return jsonify({
         'reply': reply,
         'model_used': llm_chat.name(),
@@ -633,7 +893,7 @@ def chat_reset():
 @app.route('/api/models/status', methods=['GET'])
 def models_status():
     return jsonify({
-        'recommenders_available': [name for name, m in recommenders.items() if m is not None],
+        'recommender_available': best_recommender is not None,
         'llm_available': llm_chat is not None,
         'nlp_model_available': nlp_pipeline is not None,
         'question_bank_size': sum(len(v) for v in QUESTION_BANK.values())
@@ -641,76 +901,109 @@ def models_status():
 
 @app.route('/api/profile/<uid>', methods=['GET'])
 def get_profile(uid):
-    """Devuelve datos completos del perfil del estudiante."""
     try:
         user = firebase_client.get_user(uid)
         if not user:
             return jsonify({'error': 'Usuario no encontrado'}), 404
-
-        # --- Datos básicos del usuario ---
         name = user.get('name', 'Estudiante')
-        prefs = user.get('preferences', [])  # puede ser None, aseguramos lista
+        prefs = user.get('preferences', []) or []
+        S = user.get('S', None)
 
-        # --- Estado actual (vector S) ---
-        S = user.get('S', {})
-        temas_actuales = S.get('a_temas', {})
+        # Lista completa de temas (10)
+        all_topics = ["polinomios", "fracciones", "ecuaciones", "sistemas", "factorizacion",
+                      "potencias", "radicales", "logaritmos", "funciones", "inecuaciones"]
+        topic_mastery = {topic: 0.0 for topic in all_topics}
+        critical_path = []
 
-        # --- Ruta crítica (3 temas más débiles) ---
-        if temas_actuales:
-            weakest = sorted(temas_actuales.items(),
-                             key=lambda x: x[1].get('mastery', 0))[:3]
-            critical_path = [{'topic': t, 'mastery': v.get('mastery', 0)}
-                             for t, v in weakest]
-        else:
-            critical_path = []
+        if S:
+            if isinstance(S, list):
+                for t in S:
+                    topic = t.get('topic')
+                    mastery = t.get('mastery', 0)
+                    if topic in topic_mastery:
+                        topic_mastery[topic] = mastery
+                sorted_topics = sorted(topic_mastery.items(), key=lambda x: x[1])
+                critical_path = [{'topic': t, 'mastery': m} for t, m in sorted_topics[:3]]
+            elif isinstance(S, dict) and 'a_temas' in S:
+                for topic, data in S['a_temas'].items():
+                    if topic in topic_mastery:
+                        topic_mastery[topic] = data.get('mastery', 0)
+                weakest = sorted(topic_mastery.items(), key=lambda x: x[1])[:3]
+                critical_path = [{'topic': t, 'mastery': m} for t, m in weakest]
 
-        # --- Dominio por tema ---
-        topic_mastery = {t: v.get('mastery', 0)
-                         for t, v in temas_actuales.items()}
+        # Obtener todas las sesiones ordenadas
+        try:
+            sessions_ref = firebase_client.db.collection('sessions') \
+                .where('uid', '==', uid) \
+                .order_by('startedAt', direction=firestore.Query.ASCENDING) \
+                .stream()
+            sessions = list(sessions_ref)
+        except Exception as e:
+            print(f"Error con índice, ordenando manualmente: {e}")
+            sessions_ref = firebase_client.db.collection('sessions') \
+                .where('uid', '==', uid) \
+                .stream()
+            sessions = list(sessions_ref)
+            sessions.sort(key=lambda doc: doc.to_dict().get('startedAt', ''), reverse=False)
 
-        # --- Historial de sesiones (evolución) ---
-        sessions_ref = firebase_client.db.collection('sessions') \
-            .where('uid', '==', uid) \
-            .order_by('startedAt', direction=firestore.Query.ASCENDING) \
-            .stream()
-
-        mastery_history = []
-        sessions_list = []
-        for i, doc in enumerate(sessions_ref, start=1):
+        # Recopilar interacciones (cada pregunta respondida) con su timestamp y S_after
+        interactions = []
+        for doc in sessions:
             data = doc.to_dict()
-            # Calcular dominio global de esa sesión (promedio de a_temas)
-            S_end = data.get('S_end', {})
-            temas_sesion = S_end.get('a_temas', {})
-            if temas_sesion:
-                avg_mastery = sum(t.get('mastery', 0) for t in temas_sesion.values()) / len(temas_sesion)
-            else:
-                avg_mastery = data.get('accuracy', 0)
+            started_at = data.get('startedAt')
+            if not started_at:
+                continue
+            # 🔧 CORRECCIÓN: el timestamp ya es un objeto datetime, no necesita conversión
+            # Simplemente lo usamos directamente
+            questions = data.get('questions', [])
+            for q in questions:
+                S_after = q.get('S_after')
+                if S_after:
+                    interactions.append({
+                        'timestamp': started_at,
+                        'S_after': S_after
+                    })
+            # Si no hay S_after en cada pregunta, usar S_end de la sesión como una sola interacción
+            if not questions and data.get('S_end'):
+                interactions.append({
+                    'timestamp': started_at,
+                    'S_after': data['S_end']
+                })
 
-            sessions_list.append({
-                'session_number': i,
-                'topic': data.get('topic'),
-                'accuracy': data.get('accuracy', 0),
-                'total_questions': data.get('totalQuestions', 0),
-                'ended_at': data.get('endedAt')
-            })
-            mastery_history.append({
-                'session_number': i,
-                'global_mastery': round(avg_mastery, 3)
+        # Ordenar por timestamp
+        interactions.sort(key=lambda x: x['timestamp'])
+
+        # Calcular mastery global para cada interacción
+        mastery_points = []
+        for idx, inter in enumerate(interactions, start=1):
+            global_mastery = calcular_global_mastery(inter['S_after'])
+            mastery_points.append({
+                'interaction_number': idx,
+                'global_mastery': round(global_mastery, 3)
             })
 
-        total_sessions = len(sessions_list)
+        # Agrupar cada 3 interacciones para el histórico (promedio)
+        grouped_history = []
+        for i in range(0, len(mastery_points), 3):
+            group = mastery_points[i:i+3]
+            avg_mastery = sum(p['global_mastery'] for p in group) / len(group)
+            grouped_history.append({
+                'session_number': (i // 3) + 1,
+                'global_mastery': round(avg_mastery, 3),
+                'interactions_range': f"{i+1}-{i+len(group)}"
+            })
+
+        total_interactions = len(mastery_points)
 
         profile = {
             'name': name,
             'preferences': prefs,
             'critical_path': critical_path,
-            'total_sessions': total_sessions,
+            'total_interactions': total_interactions,
             'topic_mastery': topic_mastery,
-            'mastery_history': mastery_history
+            'mastery_history': grouped_history
         }
-
         return jsonify(profile)
-
     except Exception as e:
         print(f"Error en perfil: {e}")
         return jsonify({'error': str(e)}), 500
@@ -724,7 +1017,7 @@ if __name__ == '__main__':
         rag_engine.index_questions(QUESTION_BANK)
     load_resources_catalog()
     os.makedirs(app.config['MODELS_DIR'], exist_ok=True)
-    load_recommenders()
+    load_best_recommender()
     init_llm()
-    load_nlp_model()            # <-- NLP INTEGRATION
+    load_nlp_model()
     app.run(debug=app.config['DEBUG'], host=app.config['HOST'], port=app.config['PORT'])

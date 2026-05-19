@@ -30,35 +30,42 @@ if (document.getElementById('messagesWrap')) {
     // DEFINIR updateStatePanelUI (UNA SOLA VEZ)
     // ═════════════════════════════════════════
     window.updateStatePanelUI = function () {
-      console.log('Ejecutando updateStatePanelUI manual');
       const placeholder = document.getElementById('topicDomainPlaceholder');
       const valueContainer = document.getElementById('topicDomainValue');
       const percentEl = document.getElementById('topicDomainPercent');
-      console.log('Elementos:', { placeholder, valueContainer, percentEl });
-      if (!placeholder || !valueContainer || !percentEl) {
-        console.log('Faltan elementos');
-        return;
-      }
+      const topicNameEl = document.getElementById('topicDomainTopicName');
+
+      if (!placeholder || !valueContainer || !percentEl || !topicNameEl) return;
+
       if (!window.currentTopic) {
         placeholder.style.display = 'block';
         valueContainer.style.display = 'none';
-        console.log('Sin tema, mostrando placeholder');
         return;
       }
+
       placeholder.style.display = 'none';
       valueContainer.style.display = 'flex';
+
       const S = window.studentS;
       let mastery = 0;
       if (Array.isArray(S)) {
         const temaData = S.find(t => t.topic === window.currentTopic);
         if (temaData) mastery = temaData.mastery || 0;
       }
+
       const percent = Math.round(mastery * 100);
+      const topicLabel = CONFIG.TOPIC_LABELS[window.currentTopic] || window.currentTopic;
+
       percentEl.textContent = `${percent}%`;
+      topicNameEl.textContent = topicLabel;
+
+      // Color dinámico solo para el porcentaje
       if (percent < 60) percentEl.style.color = '#ef4444';
       else if (percent < 80) percentEl.style.color = '#f97316';
       else percentEl.style.color = '#22c55e';
-      console.log('Panel actualizado a', percent + '%');
+
+      // El nombre del tema queda siempre con color de texto normal
+      topicNameEl.style.color = 'var(--text-muted)';
     };
 
     // Llamada inicial para reflejar el estado actual
@@ -253,7 +260,8 @@ if (document.getElementById('messagesWrap')) {
     const userCard = document.querySelector('.user-card');
     if (userCard) {
       userCard.addEventListener('click', () => {
-        window.openProfile();
+          window.loadProfile();
+          document.getElementById('profileOverlay').classList.add('active');
       });
     }
 

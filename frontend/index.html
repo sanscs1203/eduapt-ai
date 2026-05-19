@@ -45,9 +45,12 @@
         <div style="font-size:0.68rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-faint);margin-bottom:8px;">Nivel de dominio del tema</div>
         <div id="topicDomainBox" style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;text-align:center;">
           <div id="topicDomainPlaceholder" style="color:var(--text-muted);font-size:0.85rem;">Escoger un tema</div>
-          <div id="topicDomainValue" style="display:none;align-items:center;justify-content:center;gap:8px;">
-            <span id="topicDomainPercent" style="font-size:2rem;font-weight:700;font-family:var(--font-mono);">-</span>
-            <span id="topicDomainLabel" style="font-size:0.8rem;color:var(--text-muted);">dominio</span>
+          <div id="topicDomainValue" style="display:none;flex-direction:column;align-items:center;gap:4px;">
+            <div style="display:flex;align-items:baseline;gap:6px;">
+              <span id="topicDomainPercent" style="font-size:2rem;font-weight:700;font-family:var(--font-mono);">-</span>
+              <span id="topicDomainLabel" style="font-size:0.8rem;color:var(--text-muted);">dominio</span>
+            </div>
+            <span id="topicDomainTopicName" style="font-size:0.8rem;color:var(--text-muted);">-</span>
           </div>
         </div>
       </div>
@@ -114,14 +117,18 @@
             <h2>¡Hola, <span id="welcomeName">Estudiante</span>!</h2>
             <p>Soy tu tutor inteligente de <strong>Álgebra</strong>. Selecciona un tema o escribe tu pregunta para practicar con ejercicios adaptados a tu nivel.</p>
             <div class="quick-topics">
-              <button class="topic-chip" data-topic="polinomios">📐 Polinomios</button>
-              <button class="topic-chip" data-topic="factorizacion">🔢 Factorización</button>
-              <button class="topic-chip" data-topic="ecuaciones">⚖️ Ecuaciones</button>
-              <button class="topic-chip" data-topic="sistemas">🔗 Sistemas</button>
-              <button class="topic-chip" data-topic="fracciones">➗ Fracciones</button>
-              <button class="topic-chip" data-topic="potencias">⚡ Potencias</button>
-              <button class="topic-chip" data-topic="funciones">📈 Funciones</button>
-              <button class="topic-chip" data-topic="inecuaciones">📊 Inecuaciones</button>
+              <div class="quick-topics">
+                <button class="topic-chip" data-topic="polinomios">📐 Polinomios</button>
+                <button class="topic-chip" data-topic="factorizacion">🔢 Factorización</button>
+                <button class="topic-chip" data-topic="ecuaciones">⚖️ Ecuaciones</button>
+                <button class="topic-chip" data-topic="sistemas">🔗 Sistemas</button>
+                <button class="topic-chip" data-topic="fracciones">➗ Fracciones</button>
+                <button class="topic-chip" data-topic="potencias">⚡ Potencias</button>
+                <button class="topic-chip" data-topic="radicales">√ Radicales</button>      
+                <button class="topic-chip" data-topic="logaritmos">📈 Logaritmos</button>   
+                <button class="topic-chip" data-topic="funciones">📈 Funciones</button>
+                <button class="topic-chip" data-topic="inecuaciones">📊 Inecuaciones</button>
+              </div>
             </div>
           </div>
 
@@ -135,7 +142,7 @@
           <textarea
             id="msgInput"
             placeholder="Escribe tu respuesta o pregunta... (Enter para enviar)"
-            rows="1"
+            rows="2"
             maxlength="1000"
           ></textarea>
           <button class="btn-send" id="sendBtn" disabled>
@@ -145,7 +152,7 @@
             </svg>
           </button>
         </div>
-        <p class="input-hint">Las preguntas se adaptan automáticamente a tu estado S = [a, t, f, d].</p>
+        <p class="input-hint">Las preguntas se adaptan automáticamente a tus necesidades</p>
       </div>
 
     </main>

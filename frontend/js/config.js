@@ -17,7 +17,9 @@ export const CONFIG = {
   PILOT_QUESTION_LIMIT: 5,
   PILOT_RUN_ID: 'pilot_final_2026_05',
 
-  // Tópicos disponibles (Sincronizados con el Dataset NLP)
+  QUESTION_BANK_PATH: 'data/algebra_questions.json',
+
+  // Tópicos disponibles (10 temas, claves exactas del backend)
   TOPICS: [
     'polinomios', 
     'factorizacion', 
@@ -31,17 +33,17 @@ export const CONFIG = {
     'inecuaciones'
   ],
 
-  // Etiquetas para visualización en la UI
+  // Etiquetas para visualización en la UI (nombres amigables)
   TOPIC_LABELS: {
-    polinomios:    'Operaciones con polinomios',
-    factorizacion: 'Factorización',
-    ecuaciones:    'Ecuaciones lineales',
-    sistemas:      'Sistemas de ecuaciones',
-    fracciones:    'Fracciones algebraicas',
-    potencias:     'Potenciación',
-    radicales:     'Radicales',
-    logaritmos:    'Logaritmos',
-    funciones:     'Funciones',
-    inecuaciones:  'Inecuaciones'
+    polinomios:    '📐 Polinomios',
+    factorizacion: '🔢 Factorización',
+    ecuaciones:    '⚖️ Ecuaciones',
+    sistemas:      '🔗 Sistemas de ecuaciones',
+    fracciones:    '➗ Fracciones algebraicas',
+    potencias:     '⚡ Potencias',
+    radicales:     '√ Radicales',
+    logaritmos:    '📈 Logaritmos',
+    funciones:     '📊 Funciones',
+    inecuaciones:  '📉 Inecuaciones'
   }
 };
