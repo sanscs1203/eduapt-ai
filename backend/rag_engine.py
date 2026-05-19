@@ -20,7 +20,7 @@ class RAGEngine:
         print(f"✅ Motor RAG iniciado. Colección '{self.collection_name}' lista.")
 
     def index_questions(self, questions_data):
-        """Indexa todas las preguntas del banco en ChromaDB"""
+        """Indexa todas las preguntas del banco en ChromaDB (fuerza reindexación)."""
         ids = []
         documents = []
         metadatas = []
@@ -52,6 +52,19 @@ class RAGEngine:
             print(f"✅ {len(ids)} preguntas indexadas en ChromaDB correctamente.")
         else:
             print("⚠️ No hay preguntas para indexar.")
+
+    def index_questions_if_empty(self, questions_data):
+        """
+        Indexa SOLO si la colección está vacía.
+        Esto evita la regeneración de embeddings en cada reinicio del servidor.
+        """
+        existing_count = self.collection.count()
+        if existing_count > 0:
+            print(f"ℹ️ La colección ya contiene {existing_count} documentos. No se re-indexa.")
+            return
+        # Si está vacía, recién indexamos
+        print(f"🔄 Colección vacía. Indexando {sum(len(qs) for qs in questions_data.values())} preguntas...")
+        self.index_questions(questions_data)
 
     def retrieve_context(self, query, n_results=2):
         """

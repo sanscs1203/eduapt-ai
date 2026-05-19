@@ -1,195 +1,201 @@
 // frontend/js/profile.js
 import { CONFIG } from './config.js';
 
-// --------------------------------------------------------------
-// Abrir el panel de perfil
-// --------------------------------------------------------------
-window.openProfile = async function() {
-  const uid = sessionStorage.getItem('edu_uid');
-  if (!uid) {
-    window.showToast('No has iniciado sesión.', 'error');
-    return;
-  }
+// Referencias al DOM
+let profileOverlay = null;
+let profileContent = null;
+let profileChart = null;
 
-  try {
-    const resp = await fetch(`${CONFIG.API_BASE_URL}/api/profile/${uid}`);
-    if (!resp.ok) {
-      const errData = await resp.json().catch(() => ({ error: 'Error desconocido' }));
-      window.showToast(`Error: ${errData.error || resp.statusText}`, 'error');
-      return;
-    }
-    const profile = await resp.json();
-    buildProfileUI(profile);
-    document.getElementById('profileOverlay').classList.add('open');
-  } catch (e) {
-    console.error(e);
-    window.showToast('Error de conexión al cargar el perfil.', 'error');
-  }
-};
-
-// --------------------------------------------------------------
-// Construir la interfaz del perfil
-// --------------------------------------------------------------
-function buildProfileUI(data) {
-  const container = document.getElementById('profileContent');
-  if (!container) return;
-
-  // Valores por defecto para evitar errores si falta algún campo
-  const name = data.name || 'Estudiante';
-  const preferences = data.preferences || [];
-  const criticalPath = data.critical_path || [];
-  const totalSessions = data.total_sessions || 0;
-  const topicMastery = data.topic_mastery || {};
-  const masteryHistory = data.mastery_history || [];
-
-  let html = '';
-
-  // --- Nombre ---
-  html += `<div class="profile-section">
-    <h3>👤 Nombre</h3>
-    <p style="font-size:1.1rem;font-weight:500;">${escapeHtml(name)}</p>
-  </div>`;
-
-  // --- Preferencias ---
-  html += `<div class="profile-section">
-    <h3>🎯 Preferencias de recursos</h3>
-    <div class="badge-list">
-      ${preferences.length > 0
-        ? preferences.map(p => `<span>${escapeHtml(p)}</span>`).join('')
-        : '<span style="color:var(--text-muted);">Ninguna</span>'}
-    </div>
-  </div>`;
-
-  // --- Ruta crítica ---
-  html += `<div class="profile-section">
-    <h3>⚠️ Ruta crítica (temas a reforzar)</h3>
-    ${criticalPath.length > 0
-      ? criticalPath.map(t => `
-          <div class="critical-item">
-            • ${CONFIG.TOPIC_LABELS[t.topic] || t.topic}: ${Math.round(t.mastery * 100)}%
-          </div>`).join('')
-      : '<p style="color:var(--text-muted);">No hay datos todavía</p>'}
-  </div>`;
-
-  // --- Número de sesiones ---
-  html += `<div class="profile-section">
-    <h3>📈 Sesiones completadas</h3>
-    <p style="font-size:1.5rem;font-weight:600;">${totalSessions}</p>
-  </div>`;
-
-  // --- Barras de dominio por tema ---
-  html += `<div class="profile-section">
-    <h3>📊 Dominio por tema</h3>
-    ${Object.keys(topicMastery).length > 0
-      ? Object.entries(topicMastery).map(([topic, mastery]) => {
-          const pct = Math.round(mastery * 100);
-          return `<div class="mastery-bar">
-            <span class="label">${CONFIG.TOPIC_LABELS[topic] || topic}</span>
-            <div class="bar-bg"><div class="bar-fill" style="width:${pct}%"></div></div>
-            <span class="value">${pct}%</span>
-          </div>`;
-        }).join('')
-      : '<p style="color:var(--text-muted);">Sin datos de dominio</p>'}
-  </div>`;
-
-  // --- Gráfico de evolución ---
-  html += `<div class="profile-section">
-    <h3>📈 Evolución del dominio global</h3>
-    <canvas id="masteryChart" style="max-height:250px;"></canvas>
-    ${masteryHistory.length === 0 ? '<p style="color:var(--text-muted); margin-top:8px;">Completa sesiones para ver tu evolución</p>' : ''}
-  </div>`;
-
-  container.innerHTML = html;
-
-  // Dibujar gráfico si hay datos
-  if (masteryHistory.length > 0) {
-    renderMasteryChart(masteryHistory);
-  }
-}
-
-// --------------------------------------------------------------
-// Gráfico de evolución (Chart.js)
-// --------------------------------------------------------------
-let chartInstance = null;
-
-function renderMasteryChart(history) {
-  const canvas = document.getElementById('masteryChart');
-  if (!canvas) return;
-
-  const ctx = canvas.getContext('2d');
-  if (chartInstance) chartInstance.destroy();
-
-  const labels = history.map((_, i) => i + 1); // números de sesión
-  const data = history.map(h => h.global_mastery * 100);
-
-  chartInstance = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [{
-        label: 'Dominio global (%)',
-        data,
-        borderColor: '#3B82F6',
-        backgroundColor: 'rgba(59,130,246,0.1)',
-        fill: true,
-        tension: 0.3,
-        pointBackgroundColor: '#3B82F6'
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: true,
-      plugins: {
-        tooltip: {
-          callbacks: {
-            label: (ctx) => `Dominio: ${ctx.raw.toFixed(1)}%`
-          }
-        },
-        legend: { display: false }
-      },
-      scales: {
-        y: {
-          beginAtZero: true,
-          max: 100,
-          title: { display: true, text: '% Dominio' }
-        },
-        x: {
-          title: { display: true, text: 'Sesión' }
-        }
-      }
-    }
-  });
-}
-
-// --------------------------------------------------------------
-// Cerrar el panel de perfil
-// --------------------------------------------------------------
-function closeProfile() {
-  document.getElementById('profileOverlay')?.classList.remove('open');
-}
-
-// Eventos de cierre
+// Inicializar cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', () => {
-  const overlay = document.getElementById('profileOverlay');
-  if (overlay) {
-    overlay.addEventListener('click', (e) => {
-      if (e.target === overlay) closeProfile();
-    });
-  }
-  const closeBtn = document.getElementById('profileClose');
-  if (closeBtn) {
-    closeBtn.addEventListener('click', closeProfile);
-  }
+    profileOverlay = document.getElementById('profileOverlay');
+    profileContent = document.getElementById('profileContent');
+    
+    // Botón para abrir el perfil (ahora sí existe en el HTML)
+    const profileBtn = document.getElementById('profileBtn');
+    const profileClose = document.getElementById('profileClose');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    
+    if (profileBtn) {
+        profileBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            loadProfile();
+            if (profileOverlay) profileOverlay.classList.add('active');
+            if (sidebarOverlay) sidebarOverlay.classList.add('active');
+        });
+    } else {
+        console.warn('No se encontró el botón #profileBtn');
+    }
+    
+    if (profileClose) {
+        profileClose.addEventListener('click', () => {
+            if (profileOverlay) profileOverlay.classList.remove('active');
+            if (sidebarOverlay) sidebarOverlay.classList.remove('active');
+        });
+    }
+    
+    if (sidebarOverlay) {
+        sidebarOverlay.addEventListener('click', () => {
+            if (profileOverlay) profileOverlay.classList.remove('active');
+        });
+    }
 });
 
-// --------------------------------------------------------------
-// Función auxiliar para escapar HTML
-// --------------------------------------------------------------
+// Cargar perfil desde el backend
+window.loadProfile = async function() {
+    const uid = sessionStorage.getItem('edu_uid');
+    if (!uid) {
+        console.warn('No uid found');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${CONFIG.API_BASE_URL}/api/profile/${uid}`);
+        if (!response.ok) throw new Error('Error al cargar perfil');
+        const profile = await response.json();
+        console.log('Perfil recibido:', profile); // útil para depurar
+        renderProfile(profile);
+    } catch (error) {
+        console.error(error);
+        if (profileContent) profileContent.innerHTML = '<p class="error">No se pudo cargar el perfil. Intenta más tarde.</p>';
+    }
+};
+
+// Renderizar todo el contenido del perfil
+function renderProfile(profile) {
+    if (!profileContent) return;
+    
+    // Destructurar datos
+    const { name, preferences, critical_path, topic_mastery, total_interactions, mastery_history } = profile;
+    
+    // Construir HTML
+    let html = `
+        <div class="profile-section">
+            <h3>👤 Estudiante</h3>
+            <p><strong>Nombre:</strong> ${escapeHtml(name)}</p>
+            <p><strong>Preferencias de estudio:</strong> ${preferences.length ? preferences.join(', ') : 'No especificadas'}</p>
+        </div>
+        
+        <div class="profile-section">
+            <h3>🎯 Ruta crítica</h3>
+            <p>Temas con menor dominio (prioritarios):</p>
+            <ul class="critical-list">
+    `;
+    if (critical_path && critical_path.length) {
+        critical_path.forEach(item => {
+            const masteryPercent = Math.round(item.mastery * 100);
+            html += `<li><strong>${CONFIG.TOPIC_LABELS[item.topic] || item.topic}</strong> — Dominio: ${masteryPercent}%</li>`;
+        });
+    } else {
+        html += `<li>Completa algunas prácticas para ver tu ruta crítica.</li>`;
+    }
+    html += `</ul></div>`;
+    
+    // Dominio por tema (barras)
+    html += `<div class="profile-section"><h3>📊 Dominio por tema</h3><div class="topic-mastery-list">`;
+    for (const [topicKey, mastery] of Object.entries(topic_mastery)) {
+        const percent = Math.round(mastery * 100);
+        const label = CONFIG.TOPIC_LABELS[topicKey] || topicKey;
+        html += `
+            <div class="topic-mastery-item">
+                <span class="topic-name">${escapeHtml(label)}</span>
+                <div class="mastery-bar-bg">
+                    <div class="mastery-bar-fill" style="width: ${percent}%; background: ${getMasteryColor(mastery)};"></div>
+                </div>
+                <span class="mastery-percent">${percent}%</span>
+            </div>
+        `;
+    }
+    html += `</div></div>`;
+    
+    // Interacciones totales
+    html += `<div class="profile-section"><h3>📈 Actividad total</h3><p><strong>Total de interacciones:</strong> ${total_interactions || 0}</p><p class="hint">(Cada pregunta respondida cuenta como una interacción)</p></div>`;
+    
+    // Historial de evolución (cada 3 interacciones)
+    html += `<div class="profile-section"><h3>📉 Evolución del dominio global</h3><canvas id="masteryChart" width="400" height="200"></canvas><p class="hint">Promedio cada 3 interacciones</p></div>`;
+    
+    profileContent.innerHTML = html;
+    
+    // Dibujar gráfico si hay datos
+    if (mastery_history && mastery_history.length > 0) {
+        drawMasteryChart(mastery_history);
+    } else {
+        const canvas = document.getElementById('masteryChart');
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+            ctx.font = '14px sans-serif';
+            ctx.fillStyle = '#94a3b8';
+            ctx.fillText('No hay suficientes interacciones aún', 40, 100);
+        }
+    }
+}
+
+function drawMasteryChart(history) {
+    const canvas = document.getElementById('masteryChart');
+    if (!canvas) return;
+    
+    // Destruir gráfico anterior si existe
+    if (profileChart) {
+        profileChart.destroy();
+    }
+    
+    const ctx = canvas.getContext('2d');
+    const labels = history.map(item => `Interacciones ${item.interactions_range}`);
+    const masteryPercent = history.map(item => item.global_mastery * 100);
+    
+    profileChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Dominio global ponderado (%)',
+                data: masteryPercent,
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.3,
+                pointBackgroundColor: '#3b82f6',
+                pointBorderColor: '#ffffff',
+                pointRadius: 4,
+                pointHoverRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    title: { display: true, text: 'Dominio (%)', color: '#cbd5e1' },
+                    grid: { color: '#334155' }
+                },
+                x: {
+                    title: { display: true, text: 'Bloques de 3 interacciones', color: '#cbd5e1' },
+                    ticks: { maxRotation: 30, autoSkip: true }
+                }
+            },
+            plugins: {
+                tooltip: { callbacks: { label: (ctx) => `${ctx.raw.toFixed(1)}%` } },
+                legend: { labels: { color: '#e2e8f0' } }
+            }
+        }
+    });
+}
+
+function getMasteryColor(mastery) {
+    if (mastery < 0.45) return '#ef4444';
+    if (mastery < 0.85) return '#f59e0b';
+    return '#10b981';
+}
+
 function escapeHtml(str) {
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+    if (!str) return '';
+    return str.replace(/[&<>]/g, function(m) {
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        return m;
+    });
 }

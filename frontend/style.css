@@ -661,6 +661,8 @@ body {
 }
 
 .input-box textarea {
+  height: 48px;
+  line-height: 48px;
   flex: 1;
   background: none;
   border: none;
@@ -1323,4 +1325,106 @@ canvas#masteryChart {
 }
 #topicDomainPlaceholder {
   font-style: italic;
+}
+#topicDomainPercent {
+    font-size: 1.2rem;  /* antes 2rem */
+    word-break: break-word;
+    text-align: center;
+}
+
+/* Ajuste del texto del tema en el panel lateral */
+#topicDomainTopicName {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 400;
+  text-align: center;
+  margin-top: 2px;
+}
+
+#topicDomainPercent {
+  font-size: 1.6rem; /* un poco más pequeño que el original, pero aún destacado */
+  word-break: break-word;
+  text-align: center;
+}
+
+/* Reducir tamaño del panel de dominio para que quepa el tema debajo */
+#topicDomainBox {
+  padding: 12px 8px 10px !important;
+}
+
+/* Evitar que el chat muestre etiquetas HTML escapadas */
+.msg-text {
+  white-space: pre-line; /* respeta saltos de línea naturales */
+}
+
+.topic-mastery-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+.topic-name {
+    width: 180px;
+    font-size: 0.9rem;
+}
+.mastery-bar-bg {
+    flex: 1;
+    background-color: #334155;
+    border-radius: 10px;
+    height: 10px;
+    overflow: hidden;
+}
+.mastery-bar-fill {
+    height: 100%;
+    border-radius: 10px;
+}
+.mastery-percent {
+    width: 45px;
+    font-size: 0.8rem;
+    text-align: right;
+}
+.critical-list {
+    list-style: none;
+    padding-left: 0;
+}
+.critical-list li {
+    margin-bottom: 6px;
+}
+.profile-section {
+    margin-bottom: 24px;
+    border-bottom: 1px solid #2d3a4e;
+    padding-bottom: 16px;
+}
+.hint {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    margin-top: 6px;
+}
+.user-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+.btn-profile, .btn-logout {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 8px;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.btn-profile:hover, .btn-logout:hover {
+    background: var(--surface3);
+    color: var(--text-light);
+}
+.profile-overlay {
+    display: none;
+    /* resto de estilos fijos... */
+}
+.profile-overlay.active {
+    display: flex;
 }

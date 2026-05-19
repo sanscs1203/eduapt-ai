@@ -21,7 +21,7 @@ pipeline = joblib.load(MODEL_PATH)
 # ------------------------------------------------------------
 # 3. Función de predicción (idéntica a la de producción)
 # ------------------------------------------------------------
-def predecir_intent_y_topic(texto_usuario, umbral_confianza=0.35):
+def predecir_intent_y_topic(texto_usuario, umbral_confianza=0.1):
     texto_limpio = pipeline["preprocessor"].transform([texto_usuario])
     X_word = pipeline["word_vectorizer"].transform(texto_limpio)
     X_char = pipeline["char_vectorizer"].transform(texto_limpio)

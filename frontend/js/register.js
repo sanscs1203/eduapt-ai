@@ -830,7 +830,7 @@ if (regStep1) {
   const finalRedirectBtn = document.getElementById('goToApp');
   if (finalRedirectBtn) {
     finalRedirectBtn.addEventListener('click', () => {
-      window.location.href = 'dashboard.html';
+      window.location.href = 'index.html';
     });
   }
 }
