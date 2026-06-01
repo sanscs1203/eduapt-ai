@@ -1,0 +1,856 @@
+============================================================
+📊 INFORME DE EVALUACIÓN DEL MODELO NLP
+Fecha: 2026-05-31 22:18:58
+============================================================
+
+Detalle de predicciones:
+------------------------------------------------------------
+✅ Texto: hola profe me explica q es un polinomio porfa
+   Real    -> intent: EXPLAIN      | topic: polinomios
+   Pred.   -> intent: EXPLAIN      | topic: polinomios (conf: 0.899)
+--------------------------------------------------
+✅ Texto: no entiendo nada de trinomios cuadrados perfectos explicame
+   Real    -> intent: EXPLAIN      | topic: factorizacion
+   Pred.   -> intent: EXPLAIN      | topic: factorizacion (conf: 0.872)
+--------------------------------------------------
+✅ Texto: puedes decirme la teoria de las fracciones algebraicas?
+   Real    -> intent: EXPLAIN      | topic: fracciones
+   Pred.   -> intent: EXPLAIN      | topic: fracciones (conf: 0.848)
+--------------------------------------------------
+✅ Texto: kiero saber que es una inecuacion lineal
+   Real    -> intent: EXPLAIN      | topic: inecuaciones
+   Pred.   -> intent: EXPLAIN      | topic: inecuaciones (conf: 0.553)
+--------------------------------------------------
+✅ Texto: q significa resolver un sistema de ecuaciones de 2x2?
+   Real    -> intent: EXPLAIN      | topic: sistemas
+   Pred.   -> intent: EXPLAIN      | topic: sistemas (conf: 0.430)
+--------------------------------------------------
+✅ Texto: como se saca el dominio y rango de una funcion
+   Real    -> intent: EXPLAIN      | topic: funciones
+   Pred.   -> intent: EXPLAIN      | topic: funciones (conf: 0.446)
+--------------------------------------------------
+❌ Texto: dame el concepto basico de un logaritmo natural
+   Real    -> intent: EXPLAIN      | topic: logaritmos
+   Pred.   -> intent: PRACTICE     | topic: logaritmos (conf: 0.473)
+--------------------------------------------------
+✅ Texto: explicame de donde sale la ley de los exponentes en potencias
+   Real    -> intent: EXPLAIN      | topic: potencias
+   Pred.   -> intent: EXPLAIN      | topic: potencias (conf: 0.883)
+--------------------------------------------------
+✅ Texto: que pasa cuando una raiz tiene indice impar y base negativa?
+   Real    -> intent: EXPLAIN      | topic: radicales
+   Pred.   -> intent: EXPLAIN      | topic: radicales (conf: 0.281)
+--------------------------------------------------
+✅ Texto: necesito la formula para resolver ecuaciones cuadraticas
+   Real    -> intent: EXPLAIN      | topic: ecuaciones
+   Pred.   -> intent: EXPLAIN      | topic: ecuaciones (conf: 0.480)
+--------------------------------------------------
+✅ Texto: q diferencia hay entre un monomio y un polinomio??
+   Real    -> intent: EXPLAIN      | topic: polinomios
+   Pred.   -> intent: EXPLAIN      | topic: polinomios (conf: 0.419)
+--------------------------------------------------
+✅ Texto: puedes repasarme el caso de factorizacion por factor comun
+   Real    -> intent: EXPLAIN      | topic: factorizacion
+   Pred.   -> intent: EXPLAIN      | topic: factorizacion (conf: 0.531)
+--------------------------------------------------
+✅ Texto: definicion de fraccion propia e impropia please
+   Real    -> intent: EXPLAIN      | topic: fracciones
+   Pred.   -> intent: EXPLAIN      | topic: fracciones (conf: 0.330)
+--------------------------------------------------
+✅ Texto: explicame graficamente que es una inecuacion
+   Real    -> intent: EXPLAIN      | topic: inecuaciones
+   Pred.   -> intent: EXPLAIN      | topic: inecuaciones (conf: 0.808)
+--------------------------------------------------
+✅ Texto: q metodos existen para resolver sistemas lineales?
+   Real    -> intent: EXPLAIN      | topic: sistemas
+   Pred.   -> intent: EXPLAIN      | topic: sistemas (conf: 0.488)
+--------------------------------------------------
+✅ Texto: q es una funcion inyectiva y sobreyectiva??
+   Real    -> intent: EXPLAIN      | topic: funciones
+   Pred.   -> intent: EXPLAIN      | topic: funciones (conf: 0.536)
+--------------------------------------------------
+✅ Texto: explicame la propiedad de cambio de base de los logaritmos
+   Real    -> intent: EXPLAIN      | topic: logaritmos
+   Pred.   -> intent: EXPLAIN      | topic: logaritmos (conf: 0.492)
+--------------------------------------------------
+✅ Texto: q es una potencia de exponente negativo?
+   Real    -> intent: EXPLAIN      | topic: potencias
+   Pred.   -> intent: EXPLAIN      | topic: potencias (conf: 0.687)
+--------------------------------------------------
+✅ Texto: defineme que es la racionalizacion de radicales
+   Real    -> intent: EXPLAIN      | topic: radicales
+   Pred.   -> intent: EXPLAIN      | topic: radicales (conf: 0.748)
+--------------------------------------------------
+✅ Texto: q es una ecuacion lineal de primer grado?
+   Real    -> intent: EXPLAIN      | topic: ecuaciones
+   Pred.   -> intent: EXPLAIN      | topic: ecuaciones (conf: 0.720)
+--------------------------------------------------
+❌ Texto: tengo una duda en este ejercicio x^2 - 4 = 0 que hago
+   Real    -> intent: DOUBT        | topic: ecuaciones
+   Pred.   -> intent: DOUBT        | topic: funciones (conf: 0.978)
+--------------------------------------------------
+❌ Texto: si tengo 3/(x-1) + 2/x como se saca el minimo comun multiplo?
+   Real    -> intent: DOUBT        | topic: fracciones
+   Pred.   -> intent: DOUBT        | topic: factorizacion (conf: 0.536)
+--------------------------------------------------
+❌ Texto: en la operacion (2x^2)*(4x^3) los exponentes se suman o se multiplican?
+   Real    -> intent: DOUBT        | topic: potencias
+   Pred.   -> intent: EXPLAIN      | topic: potencias (conf: 0.392)
+--------------------------------------------------
+✅ Texto: me tranque factorizando x^2 + 5x + 6 no me da
+   Real    -> intent: DOUBT        | topic: factorizacion
+   Pred.   -> intent: DOUBT        | topic: factorizacion (conf: 0.583)
+--------------------------------------------------
+❌ Texto: ayuda no se como despejar y en 2x + 3y = 12
+   Real    -> intent: DOUBT        | topic: sistemas
+   Pred.   -> intent: DOUBT        | topic: ecuaciones (conf: 0.591)
+--------------------------------------------------
+✅ Texto: me da error al meter un logaritmo de un numero negativo xq pasa eso?
+   Real    -> intent: DOUBT        | topic: logaritmos
+   Pred.   -> intent: DOUBT        | topic: logaritmos (conf: 0.810)
+--------------------------------------------------
+✅ Texto: en una inecuacion si divido por un numero negativo cambia el signo?
+   Real    -> intent: DOUBT        | topic: inecuaciones
+   Pred.   -> intent: DOUBT        | topic: inecuaciones (conf: 0.876)
+--------------------------------------------------
+❌ Texto: la raiz de una suma es igual a la suma de las raices? me confundi
+   Real    -> intent: DOUBT        | topic: radicales
+   Pred.   -> intent: EXPLAIN      | topic: radicales (conf: 0.623)
+--------------------------------------------------
+❌ Texto: este polinomio 3x^3 - 2x + 5 cual es su grado real??
+   Real    -> intent: DOUBT        | topic: polinomios
+   Pred.   -> intent: EXPLAIN      | topic: polinomios (conf: 0.389)
+--------------------------------------------------
+❌ Texto: si tengo f(x) = sqrt(x-3) el dominio incluye al 3?
+   Real    -> intent: DOUBT        | topic: funciones
+   Pred.   -> intent: EXPLAIN      | topic: funciones (conf: 0.362)
+--------------------------------------------------
+❌ Texto: como se hace el metodo de reduccion si las x no tienen el mismo numero?
+   Real    -> intent: DOUBT        | topic: sistemas
+   Pred.   -> intent: EXPLAIN      | topic: sistemas (conf: 0.607)
+--------------------------------------------------
+✅ Texto: estoy haciendo una resta de polinomios y me confundo con el signo de adentro
+   Real    -> intent: DOUBT        | topic: polinomios
+   Pred.   -> intent: DOUBT        | topic: polinomios (conf: 0.840)
+--------------------------------------------------
+❌ Texto: como simplifico x^2-9 entre x+3? se cancela la x?
+   Real    -> intent: DOUBT        | topic: fracciones
+   Pred.   -> intent: EXPLAIN      | topic: ecuaciones (conf: 0.223)
+--------------------------------------------------
+✅ Texto: cuanto es 5 elevado a la cero? da 1 o 0?
+   Real    -> intent: DOUBT        | topic: potencias
+   Pred.   -> intent: DOUBT        | topic: potencias (conf: 0.538)
+--------------------------------------------------
+✅ Texto: me trabé en el caso de diferencia de cuadrados con un ejercicio
+   Real    -> intent: DOUBT        | topic: factorizacion
+   Pred.   -> intent: DOUBT        | topic: factorizacion (conf: 0.536)
+--------------------------------------------------
+❌ Texto: para la inecuacion 2x - 5 > 9 el 7 entra en la solucion?
+   Real    -> intent: DOUBT        | topic: inecuaciones
+   Pred.   -> intent: EXPLAIN      | topic: inecuaciones (conf: 0.348)
+--------------------------------------------------
+✅ Texto: tengo una duda con log(x) + log(2) = log(10) como despejo la x?
+   Real    -> intent: DOUBT        | topic: logaritmos
+   Pred.   -> intent: DOUBT        | topic: logaritmos (conf: 0.870)
+--------------------------------------------------
+✅ Texto: se puede sumar raiz de 2 mas raiz de 3? o se queda asi?
+   Real    -> intent: DOUBT        | topic: radicales
+   Pred.   -> intent: DOUBT        | topic: radicales (conf: 0.598)
+--------------------------------------------------
+❌ Texto: como compruebo si x=5 es la solucion correcta de mi ecuacion?
+   Real    -> intent: DOUBT        | topic: ecuaciones
+   Pred.   -> intent: EXPLAIN      | topic: ecuaciones (conf: 0.428)
+--------------------------------------------------
+❌ Texto: si una linea vertical corta dos puntos no es funcion verdad?
+   Real    -> intent: DOUBT        | topic: funciones
+   Pred.   -> intent: EXPLAIN      | topic: funciones (conf: 0.616)
+--------------------------------------------------
+✅ Texto: ponme un ejercicio para practicar multiplicacion de polinomios
+   Real    -> intent: PRACTICE     | topic: polinomios
+   Pred.   -> intent: PRACTICE     | topic: polinomios (conf: 0.959)
+--------------------------------------------------
+✅ Texto: dame un problema de ecuaciones dificil para resolver ya
+   Real    -> intent: PRACTICE     | topic: ecuaciones
+   Pred.   -> intent: PRACTICE     | topic: ecuaciones (conf: 0.867)
+--------------------------------------------------
+✅ Texto: kiero practicar sistemas de ecuaciones 3x3 mandame uno
+   Real    -> intent: PRACTICE     | topic: sistemas
+   Pred.   -> intent: PRACTICE     | topic: sistemas (conf: 0.924)
+--------------------------------------------------
+❌ Texto: tienes talleres de fracciones algebraicas para resolver?
+   Real    -> intent: PRACTICE     | topic: fracciones
+   Pred.   -> intent: ABOUT        | topic: social (conf: 0.463)
+--------------------------------------------------
+✅ Texto: mandame ejercicios sencillos de factorizacion
+   Real    -> intent: PRACTICE     | topic: factorizacion
+   Pred.   -> intent: PRACTICE     | topic: factorizacion (conf: 0.922)
+--------------------------------------------------
+❌ Texto: quiero hacer ejemplos de inecuaciones cuadraticas
+   Real    -> intent: PRACTICE     | topic: inecuaciones
+   Pred.   -> intent: DOUBT        | topic: inecuaciones (conf: 0.277)
+--------------------------------------------------
+✅ Texto: ponme retos sobre funciones logaritmicas y su dominio
+   Real    -> intent: PRACTICE     | topic: funciones
+   Pred.   -> intent: PRACTICE     | topic: funciones (conf: 0.705)
+--------------------------------------------------
+✅ Texto: dame ejercicios resueltos de potencias para guiarme
+   Real    -> intent: PRACTICE     | topic: potencias
+   Pred.   -> intent: PRACTICE     | topic: potencias (conf: 0.893)
+--------------------------------------------------
+✅ Texto: mandame actividades de simplificar radicales paso a paso
+   Real    -> intent: PRACTICE     | topic: radicales
+   Pred.   -> intent: PRACTICE     | topic: radicales (conf: 0.356)
+--------------------------------------------------
+✅ Texto: tienes mas problemas de aplicacion de logaritmos?
+   Real    -> intent: PRACTICE     | topic: logaritmos
+   Pred.   -> intent: PRACTICE     | topic: logaritmos (conf: 0.553)
+--------------------------------------------------
+✅ Texto: dame una tarea corta de division de polinomios
+   Real    -> intent: PRACTICE     | topic: polinomios
+   Pred.   -> intent: PRACTICE     | topic: polinomios (conf: 0.903)
+--------------------------------------------------
+✅ Texto: ponme problemas de la vida real con ecuaciones lineales
+   Real    -> intent: PRACTICE     | topic: ecuaciones
+   Pred.   -> intent: PRACTICE     | topic: ecuaciones (conf: 0.696)
+--------------------------------------------------
+✅ Texto: mandame ejercicios de sistemas de ecuaciones por metodo de sustitucion
+   Real    -> intent: PRACTICE     | topic: sistemas
+   Pred.   -> intent: PRACTICE     | topic: sistemas (conf: 0.723)
+--------------------------------------------------
+✅ Texto: quiero practicar operaciones combinadas con fracciones algebraicas
+   Real    -> intent: PRACTICE     | topic: fracciones
+   Pred.   -> intent: PRACTICE     | topic: fracciones (conf: 0.833)
+--------------------------------------------------
+❌ Texto: generame una lista de expresiones para factorizar por trinomio
+   Real    -> intent: PRACTICE     | topic: factorizacion
+   Pred.   -> intent: EXPLAIN      | topic: polinomios (conf: 0.492)
+--------------------------------------------------
+✅ Texto: necesito mas ejercicios para practicar intervalos de inecuaciones
+   Real    -> intent: PRACTICE     | topic: inecuaciones
+   Pred.   -> intent: PRACTICE     | topic: inecuaciones (conf: 0.941)
+--------------------------------------------------
+✅ Texto: dame un ejercicio para graficar funciones lineales basico
+   Real    -> intent: PRACTICE     | topic: funciones
+   Pred.   -> intent: PRACTICE     | topic: funciones (conf: 0.717)
+--------------------------------------------------
+✅ Texto: ponme ejercicios sobre propiedades de la potenciacion
+   Real    -> intent: PRACTICE     | topic: potencias
+   Pred.   -> intent: PRACTICE     | topic: potencias (conf: 0.868)
+--------------------------------------------------
+❌ Texto: mandame operaciones de sumas de radicales semejantes
+   Real    -> intent: PRACTICE     | topic: radicales
+   Pred.   -> intent: EXPLAIN      | topic: radicales (conf: 0.370)
+--------------------------------------------------
+✅ Texto: quiero practicar ecuaciones logaritmicas complejas
+   Real    -> intent: PRACTICE     | topic: logaritmos
+   Pred.   -> intent: PRACTICE     | topic: logaritmos (conf: 0.888)
+--------------------------------------------------
+✅ Texto: hazme un quiz de factorizacion para ver si se
+   Real    -> intent: QUIZ         | topic: factorizacion
+   Pred.   -> intent: QUIZ         | topic: factorizacion (conf: 0.811)
+--------------------------------------------------
+✅ Texto: evaluame en inecuaciones con un examen de 5 preguntas
+   Real    -> intent: QUIZ         | topic: inecuaciones
+   Pred.   -> intent: QUIZ         | topic: inecuaciones (conf: 0.993)
+--------------------------------------------------
+❌ Texto: quiero tomar la prueba de sistemas de ecuaciones lineales
+   Real    -> intent: QUIZ         | topic: sistemas
+   Pred.   -> intent: EXPLAIN      | topic: sistemas (conf: 0.600)
+--------------------------------------------------
+✅ Texto: ponme el test de fracciones algebraicas para pasar de modulo
+   Real    -> intent: QUIZ         | topic: fracciones
+   Pred.   -> intent: QUIZ         | topic: fracciones (conf: 0.642)
+--------------------------------------------------
+✅ Texto: estoy listo para la evaluacion final de polinomios
+   Real    -> intent: QUIZ         | topic: polinomios
+   Pred.   -> intent: QUIZ         | topic: polinomios (conf: 0.475)
+--------------------------------------------------
+✅ Texto: hazme preguntas tipo test sobre funciones cuadraticas
+   Real    -> intent: QUIZ         | topic: funciones
+   Pred.   -> intent: QUIZ         | topic: funciones (conf: 0.905)
+--------------------------------------------------
+✅ Texto: kiero hacer el examen de propiedades de potencias
+   Real    -> intent: QUIZ         | topic: potencias
+   Pred.   -> intent: QUIZ         | topic: potencias (conf: 0.677)
+--------------------------------------------------
+❌ Texto: comencemos la evaluacion sobre simplificacion de radicales
+   Real    -> intent: QUIZ         | topic: radicales
+   Pred.   -> intent: EXPLAIN      | topic: radicales (conf: 0.388)
+--------------------------------------------------
+✅ Texto: hazme un cuestionario corto sobre logaritmos naturales
+   Real    -> intent: QUIZ         | topic: logaritmos
+   Pred.   -> intent: QUIZ         | topic: logaritmos (conf: 0.409)
+--------------------------------------------------
+✅ Texto: evaluame ecuaciones de segundo grado porfa
+   Real    -> intent: QUIZ         | topic: ecuaciones
+   Pred.   -> intent: QUIZ         | topic: ecuaciones (conf: 0.826)
+--------------------------------------------------
+✅ Texto: quiero medir mi nivel con un quiz interactivo de factorizacion
+   Real    -> intent: QUIZ         | topic: factorizacion
+   Pred.   -> intent: QUIZ         | topic: factorizacion (conf: 0.972)
+--------------------------------------------------
+✅ Texto: ponme una pregunta de opcion multiple sobre inecuaciones
+   Real    -> intent: QUIZ         | topic: inecuaciones
+   Pred.   -> intent: QUIZ         | topic: inecuaciones (conf: 0.674)
+--------------------------------------------------
+✅ Texto: hazme un control de lectura o conceptos de sistemas lineales
+   Real    -> intent: QUIZ         | topic: sistemas
+   Pred.   -> intent: QUIZ         | topic: sistemas (conf: 0.505)
+--------------------------------------------------
+✅ Texto: estoy listo para el minitest de fracciones
+   Real    -> intent: QUIZ         | topic: fracciones
+   Pred.   -> intent: QUIZ         | topic: fracciones (conf: 0.440)
+--------------------------------------------------
+✅ Texto: evaluame que tanto se de productos notables y polinomios
+   Real    -> intent: QUIZ         | topic: polinomios
+   Pred.   -> intent: QUIZ         | topic: polinomios (conf: 0.691)
+--------------------------------------------------
+✅ Texto: quiero empezar el quiz de modelado de funciones
+   Real    -> intent: QUIZ         | topic: funciones
+   Pred.   -> intent: QUIZ         | topic: funciones (conf: 0.772)
+--------------------------------------------------
+✅ Texto: ponme problemas de examen de leyes de exponentes
+   Real    -> intent: QUIZ         | topic: potencias
+   Pred.   -> intent: QUIZ         | topic: potencias (conf: 0.537)
+--------------------------------------------------
+✅ Texto: hazme un examen sorpresa de operaciones con radicales
+   Real    -> intent: QUIZ         | topic: radicales
+   Pred.   -> intent: QUIZ         | topic: radicales (conf: 0.912)
+--------------------------------------------------
+❌ Texto: quiero resolver la prueba de ecuaciones exponenciales y logaritmicas
+   Real    -> intent: QUIZ         | topic: logaritmos
+   Pred.   -> intent: EXPLAIN      | topic: logaritmos (conf: 0.522)
+--------------------------------------------------
+✅ Texto: comencemos el test de ecuaciones lineales
+   Real    -> intent: QUIZ         | topic: ecuaciones
+   Pred.   -> intent: QUIZ         | topic: ecuaciones (conf: 0.598)
+--------------------------------------------------
+❌ Texto: hola chatbot como estas
+   Real    -> intent: GREETING     | topic: social
+   Pred.   -> intent: ABOUT        | topic: social (conf: 0.270)
+--------------------------------------------------
+✅ Texto: buenas tardes profesor virtual
+   Real    -> intent: GREETING     | topic: social
+   Pred.   -> intent: GREETING     | topic: social (conf: 0.568)
+--------------------------------------------------
+✅ Texto: hey q mas todo bien?
+   Real    -> intent: GREETING     | topic: social
+   Pred.   -> intent: GREETING     | topic: social (conf: 0.887)
+--------------------------------------------------
+✅ Texto: holaaa hay alguien ahi?
+   Real    -> intent: GREETING     | topic: social
+   Pred.   -> intent: GREETING     | topic: social (conf: 0.924)
+--------------------------------------------------
+✅ Texto: buenos dias bot de matematicas
+   Real    -> intent: GREETING     | topic: social
+   Pred.   -> intent: GREETING     | topic: social (conf: 0.400)
+--------------------------------------------------
+✅ Texto: hola
+   Real    -> intent: GREETING     | topic: social
+   Pred.   -> intent: GREETING     | topic: social (conf: 0.681)
+--------------------------------------------------
+✅ Texto: saludos cordiales para el tutor virtual
+   Real    -> intent: GREETING     | topic: social
+   Pred.   -> intent: GREETING     | topic: social (conf: 0.275)
+--------------------------------------------------
+✅ Texto: hello como va el dia
+   Real    -> intent: GREETING     | topic: social
+   Pred.   -> intent: GREETING     | topic: social (conf: 0.650)
+--------------------------------------------------
+✅ Texto: buenas buenas
+   Real    -> intent: GREETING     | topic: social
+   Pred.   -> intent: GREETING     | topic: social (conf: 0.618)
+--------------------------------------------------
+❌ Texto: hola amigo virtual listo para estudiar
+   Real    -> intent: GREETING     | topic: social
+   Pred.   -> intent: ABOUT        | topic: social (conf: 0.566)
+--------------------------------------------------
+✅ Texto: hey hola
+   Real    -> intent: GREETING     | topic: social
+   Pred.   -> intent: GREETING     | topic: social (conf: 0.723)
+--------------------------------------------------
+✅ Texto: que tal todo por aqui
+   Real    -> intent: GREETING     | topic: social
+   Pred.   -> intent: GREETING     | topic: social (conf: 0.482)
+--------------------------------------------------
+✅ Texto: hola eduadapt ai
+   Real    -> intent: GREETING     | topic: social
+   Pred.   -> intent: GREETING     | topic: social (conf: 0.556)
+--------------------------------------------------
+✅ Texto: hola de nuevo profe
+   Real    -> intent: GREETING     | topic: social
+   Pred.   -> intent: GREETING     | topic: social (conf: 0.660)
+--------------------------------------------------
+✅ Texto: buenas tardes muchachos
+   Real    -> intent: GREETING     | topic: social
+   Pred.   -> intent: GREETING     | topic: social (conf: 0.449)
+--------------------------------------------------
+✅ Texto: aloha bot
+   Real    -> intent: GREETING     | topic: social
+   Pred.   -> intent: GREETING     | topic: social (conf: 0.363)
+--------------------------------------------------
+✅ Texto: holaaaaa
+   Real    -> intent: GREETING     | topic: social
+   Pred.   -> intent: GREETING     | topic: social (conf: 0.388)
+--------------------------------------------------
+✅ Texto: hey que sopa
+   Real    -> intent: GREETING     | topic: social
+   Pred.   -> intent: GREETING     | topic: social (conf: 0.550)
+--------------------------------------------------
+✅ Texto: buen dia profe un gusto saludarte
+   Real    -> intent: GREETING     | topic: social
+   Pred.   -> intent: GREETING     | topic: social (conf: 0.404)
+--------------------------------------------------
+✅ Texto: hola robot
+   Real    -> intent: GREETING     | topic: social
+   Pred.   -> intent: GREETING     | topic: social (conf: 0.645)
+--------------------------------------------------
+✅ Texto: chao me voy a dormir
+   Real    -> intent: GOODBYE      | topic: social
+   Pred.   -> intent: GOODBYE      | topic: social (conf: 0.505)
+--------------------------------------------------
+✅ Texto: adios profe gracias por la clase
+   Real    -> intent: GOODBYE      | topic: social
+   Pred.   -> intent: GOODBYE      | topic: social (conf: 0.427)
+--------------------------------------------------
+✅ Texto: hasta luego nos vemos mañana
+   Real    -> intent: GOODBYE      | topic: social
+   Pred.   -> intent: GOODBYE      | topic: social (conf: 0.861)
+--------------------------------------------------
+✅ Texto: ya termine por hoy chao bot
+   Real    -> intent: GOODBYE      | topic: social
+   Pred.   -> intent: GOODBYE      | topic: social (conf: 0.837)
+--------------------------------------------------
+✅ Texto: bye bye cuidate
+   Real    -> intent: GOODBYE      | topic: social
+   Pred.   -> intent: GOODBYE      | topic: social (conf: 0.810)
+--------------------------------------------------
+✅ Texto: me tengo que ir nos pillamos
+   Real    -> intent: GOODBYE      | topic: social
+   Pred.   -> intent: GOODBYE      | topic: social (conf: 0.370)
+--------------------------------------------------
+✅ Texto: hablamos luego profe
+   Real    -> intent: GOODBYE      | topic: social
+   Pred.   -> intent: GOODBYE      | topic: social (conf: 0.592)
+--------------------------------------------------
+✅ Texto: nos vemos en la siguiente sesion
+   Real    -> intent: GOODBYE      | topic: social
+   Pred.   -> intent: GOODBYE      | topic: social (conf: 0.330)
+--------------------------------------------------
+✅ Texto: cerrar sesion adios
+   Real    -> intent: GOODBYE      | topic: social
+   Pred.   -> intent: GOODBYE      | topic: social (conf: 0.329)
+--------------------------------------------------
+✅ Texto: listo chao
+   Real    -> intent: GOODBYE      | topic: social
+   Pred.   -> intent: GOODBYE      | topic: social (conf: 0.519)
+--------------------------------------------------
+✅ Texto: me desconecto adios
+   Real    -> intent: GOODBYE      | topic: social
+   Pred.   -> intent: GOODBYE      | topic: social (conf: 0.518)
+--------------------------------------------------
+✅ Texto: ya fue suficiente algebra por hoy bye
+   Real    -> intent: GOODBYE      | topic: social
+   Pred.   -> intent: GOODBYE      | topic: social (conf: 0.257)
+--------------------------------------------------
+✅ Texto: bueno me retiro chao
+   Real    -> intent: GOODBYE      | topic: social
+   Pred.   -> intent: GOODBYE      | topic: social (conf: 0.801)
+--------------------------------------------------
+✅ Texto: hasta la vista bot
+   Real    -> intent: GOODBYE      | topic: social
+   Pred.   -> intent: GOODBYE      | topic: social (conf: 0.600)
+--------------------------------------------------
+✅ Texto: nos vemos
+   Real    -> intent: GOODBYE      | topic: social
+   Pred.   -> intent: GOODBYE      | topic: social (conf: 0.617)
+--------------------------------------------------
+✅ Texto: chao pescao
+   Real    -> intent: GOODBYE      | topic: social
+   Pred.   -> intent: GOODBYE      | topic: social (conf: 0.533)
+--------------------------------------------------
+✅ Texto: adios
+   Real    -> intent: GOODBYE      | topic: social
+   Pred.   -> intent: GOODBYE      | topic: social (conf: 0.719)
+--------------------------------------------------
+✅ Texto: que pases buena noche chao
+   Real    -> intent: GOODBYE      | topic: social
+   Pred.   -> intent: GOODBYE      | topic: social (conf: 0.693)
+--------------------------------------------------
+✅ Texto: voy a descansar hasta pronto
+   Real    -> intent: GOODBYE      | topic: social
+   Pred.   -> intent: GOODBYE      | topic: social (conf: 0.776)
+--------------------------------------------------
+✅ Texto: bye tutor mil gracias
+   Real    -> intent: GOODBYE      | topic: social
+   Pred.   -> intent: GOODBYE      | topic: social (conf: 0.281)
+--------------------------------------------------
+❌ Texto: muchas gracias por la explicacion quedo super claro
+   Real    -> intent: THANKS       | topic: social
+   Pred.   -> intent: EXPLAIN      | topic: ecuaciones (conf: 0.705)
+--------------------------------------------------
+❌ Texto: eres el mejor bot del mundo gracias
+   Real    -> intent: THANKS       | topic: social
+   Pred.   -> intent: ABOUT        | topic: social (conf: 0.564)
+--------------------------------------------------
+❌ Texto: gracias profe ya entendi el ejercicio
+   Real    -> intent: THANKS       | topic: social
+   Pred.   -> intent: PRACTICE     | topic: social (conf: 0.457)
+--------------------------------------------------
+✅ Texto: perfecto mil gracias por tu paciencia
+   Real    -> intent: THANKS       | topic: social
+   Pred.   -> intent: THANKS       | topic: social (conf: 0.228)
+--------------------------------------------------
+✅ Texto: te lo agradezco mucho me salvaste el parcial
+   Real    -> intent: THANKS       | topic: social
+   Pred.   -> intent: THANKS       | topic: social (conf: 0.665)
+--------------------------------------------------
+❌ Texto: graciasssss
+   Real    -> intent: THANKS       | topic: social
+   Pred.   -> intent: EXPLAIN      | topic: social (conf: 0.180)
+--------------------------------------------------
+❌ Texto: excelente explicacion gracias
+   Real    -> intent: THANKS       | topic: social
+   Pred.   -> intent: EXPLAIN      | topic: potencias (conf: 0.820)
+--------------------------------------------------
+❌ Texto: me sirvio full tu ayuda ty
+   Real    -> intent: THANKS       | topic: social
+   Pred.   -> intent: DOUBT        | topic: social (conf: 0.468)
+--------------------------------------------------
+❌ Texto: entendidicimo gracias chatbot
+   Real    -> intent: THANKS       | topic: social
+   Pred.   -> intent: ABOUT        | topic: social (conf: 0.359)
+--------------------------------------------------
+❌ Texto: wow no lo habia visto asi muchas gracias
+   Real    -> intent: THANKS       | topic: social
+   Pred.   -> intent: DOUBT        | topic: social (conf: 0.298)
+--------------------------------------------------
+✅ Texto: gracias de verdad
+   Real    -> intent: THANKS       | topic: social
+   Pred.   -> intent: THANKS       | topic: social (conf: 0.954)
+--------------------------------------------------
+✅ Texto: sos un crack gracias
+   Real    -> intent: THANKS       | topic: social
+   Pred.   -> intent: THANKS       | topic: social (conf: 0.996)
+--------------------------------------------------
+❌ Texto: gracias por resolver mi duda tan rapido
+   Real    -> intent: THANKS       | topic: social
+   Pred.   -> intent: DOUBT        | topic: social (conf: 0.495)
+--------------------------------------------------
+✅ Texto: buenisimo gracias
+   Real    -> intent: THANKS       | topic: social
+   Pred.   -> intent: THANKS       | topic: social (conf: 0.950)
+--------------------------------------------------
+❌ Texto: gracias por los ejercicios de practica
+   Real    -> intent: THANKS       | topic: social
+   Pred.   -> intent: PRACTICE     | topic: funciones (conf: 0.990)
+--------------------------------------------------
+✅ Texto: me aclaraste todo el panorama te lo agradezco
+   Real    -> intent: THANKS       | topic: social
+   Pred.   -> intent: THANKS       | topic: social (conf: 0.468)
+--------------------------------------------------
+✅ Texto: vales mil gracias bot
+   Real    -> intent: THANKS       | topic: social
+   Pred.   -> intent: THANKS       | topic: social (conf: 0.375)
+--------------------------------------------------
+❌ Texto: asi da gusto aprender mates gracias
+   Real    -> intent: THANKS       | topic: social
+   Pred.   -> intent: DOUBT        | topic: logaritmos (conf: 0.539)
+--------------------------------------------------
+✅ Texto: gracias jefe
+   Real    -> intent: THANKS       | topic: social
+   Pred.   -> intent: THANKS       | topic: social (conf: 0.993)
+--------------------------------------------------
+✅ Texto: muchas gracias profe
+   Real    -> intent: THANKS       | topic: social
+   Pred.   -> intent: THANKS       | topic: social (conf: 0.472)
+--------------------------------------------------
+✅ Texto: quien eres tu?
+   Real    -> intent: ABOUT        | topic: social
+   Pred.   -> intent: ABOUT        | topic: social (conf: 0.968)
+--------------------------------------------------
+✅ Texto: cual es el objetivo de este chatbot?
+   Real    -> intent: ABOUT        | topic: social
+   Pred.   -> intent: ABOUT        | topic: social (conf: 0.473)
+--------------------------------------------------
+✅ Texto: que temas me puedes enseñar tu?
+   Real    -> intent: ABOUT        | topic: social
+   Pred.   -> intent: ABOUT        | topic: social (conf: 0.544)
+--------------------------------------------------
+✅ Texto: para que sirve eduadapt ai?
+   Real    -> intent: ABOUT        | topic: social
+   Pred.   -> intent: ABOUT        | topic: social (conf: 0.769)
+--------------------------------------------------
+✅ Texto: eres una inteligencia artificial de la uninorte?
+   Real    -> intent: ABOUT        | topic: social
+   Pred.   -> intent: ABOUT        | topic: social (conf: 0.570)
+--------------------------------------------------
+❌ Texto: me dices tus funciones principales porfa
+   Real    -> intent: ABOUT        | topic: social
+   Pred.   -> intent: EXPLAIN      | topic: funciones (conf: 0.792)
+--------------------------------------------------
+✅ Texto: quien te programo o te creo?
+   Real    -> intent: ABOUT        | topic: social
+   Pred.   -> intent: ABOUT        | topic: social (conf: 0.822)
+--------------------------------------------------
+✅ Texto: que puedes hacer ademas de resolver ecuaciones?
+   Real    -> intent: ABOUT        | topic: social
+   Pred.   -> intent: ABOUT        | topic: social (conf: 0.558)
+--------------------------------------------------
+✅ Texto: cual es tu proposito en esta plataforma?
+   Real    -> intent: ABOUT        | topic: social
+   Pred.   -> intent: ABOUT        | topic: social (conf: 0.777)
+--------------------------------------------------
+✅ Texto: eres un bot entrenado en algebra?
+   Real    -> intent: ABOUT        | topic: social
+   Pred.   -> intent: ABOUT        | topic: social (conf: 0.556)
+--------------------------------------------------
+✅ Texto: como funcionas por dentro?
+   Real    -> intent: ABOUT        | topic: social
+   Pred.   -> intent: ABOUT        | topic: social (conf: 0.892)
+--------------------------------------------------
+❌ Texto: de que trata este proyecto educativo?
+   Real    -> intent: ABOUT        | topic: social
+   Pred.   -> intent: DOUBT        | topic: social (conf: 0.554)
+--------------------------------------------------
+❌ Texto: me explicas que perfiles tienes configurados?
+   Real    -> intent: ABOUT        | topic: social
+   Pred.   -> intent: EXPLAIN      | topic: factorizacion (conf: 0.768)
+--------------------------------------------------
+❌ Texto: puedes tomarme examenes o solo das teoria?
+   Real    -> intent: ABOUT        | topic: social
+   Pred.   -> intent: EXPLAIN      | topic: polinomios (conf: 0.679)
+--------------------------------------------------
+❌ Texto: cual es tu nombre real?
+   Real    -> intent: ABOUT        | topic: social
+   Pred.   -> intent: EXPLAIN      | topic: social (conf: 0.215)
+--------------------------------------------------
+❌ Texto: que modulos cubres en este sistema?
+   Real    -> intent: ABOUT        | topic: social
+   Pred.   -> intent: DOUBT        | topic: sistemas (conf: 0.417)
+--------------------------------------------------
+❌ Texto: tu me ayudas a pasar algebra de primer semestre?
+   Real    -> intent: ABOUT        | topic: social
+   Pred.   -> intent: DOUBT        | topic: social (conf: 0.409)
+--------------------------------------------------
+✅ Texto: eres un agente inteligente tutor?
+   Real    -> intent: ABOUT        | topic: social
+   Pred.   -> intent: ABOUT        | topic: social (conf: 0.607)
+--------------------------------------------------
+❌ Texto: me dices que comandos o intenciones entiendes?
+   Real    -> intent: ABOUT        | topic: social
+   Pred.   -> intent: EXPLAIN      | topic: radicales (conf: 0.938)
+--------------------------------------------------
+✅ Texto: cual es el alcance de esta IA conversacional?
+   Real    -> intent: ABOUT        | topic: social
+   Pred.   -> intent: ABOUT        | topic: social (conf: 0.636)
+--------------------------------------------------
+❌ Texto: cuantos años tienes chatbot?
+   Real    -> intent: CASUAL       | topic: social
+   Pred.   -> intent: ABOUT        | topic: social (conf: 0.508)
+--------------------------------------------------
+❌ Texto: te gusta el futbol o juegas algo?
+   Real    -> intent: CASUAL       | topic: social
+   Pred.   -> intent: PRACTICE     | topic: social (conf: 0.494)
+--------------------------------------------------
+❌ Texto: cuanto es dos mas dos?
+   Real    -> intent: CASUAL       | topic: social
+   Pred.   -> intent: GREETING     | topic: social (conf: 0.370)
+--------------------------------------------------
+❌ Texto: tienes sentimientos o eres frio?
+   Real    -> intent: CASUAL       | topic: social
+   Pred.   -> intent: ABOUT        | topic: social (conf: 0.863)
+--------------------------------------------------
+❌ Texto: hace un calor increible hoy en barranquilla xd
+   Real    -> intent: CASUAL       | topic: social
+   Pred.   -> intent: UNKNOWN      | topic: social (conf: 0.889)
+--------------------------------------------------
+✅ Texto: jajaja que buen chiste bot
+   Real    -> intent: CASUAL       | topic: social
+   Pred.   -> intent: CASUAL       | topic: social (conf: 0.237)
+--------------------------------------------------
+❌ Texto: que opinas del fin del mundo?
+   Real    -> intent: CASUAL       | topic: social
+   Pred.   -> intent: ABOUT        | topic: social (conf: 0.239)
+--------------------------------------------------
+❌ Texto: cuentame un chiste de matematicas para reirme
+   Real    -> intent: CASUAL       | topic: social
+   Pred.   -> intent: ABOUT        | topic: social (conf: 0.378)
+--------------------------------------------------
+❌ Texto: cual es tu comida favorita si fueras humano?
+   Real    -> intent: CASUAL       | topic: social
+   Pred.   -> intent: EXPLAIN      | topic: polinomios (conf: 0.457)
+--------------------------------------------------
+✅ Texto: estoy muy aburrido hoy
+   Real    -> intent: CASUAL       | topic: social
+   Pred.   -> intent: CASUAL       | topic: social (conf: 0.519)
+--------------------------------------------------
+❌ Texto: viva el junior de barranquilla crack
+   Real    -> intent: CASUAL       | topic: social
+   Pred.   -> intent: UNKNOWN      | topic: social (conf: 0.521)
+--------------------------------------------------
+❌ Texto: tienes novia o novio robot?
+   Real    -> intent: CASUAL       | topic: social
+   Pred.   -> intent: ABOUT        | topic: social (conf: 0.458)
+--------------------------------------------------
+❌ Texto: que haces en tu tiempo libre cuando no estudias?
+   Real    -> intent: CASUAL       | topic: social
+   Pred.   -> intent: ABOUT        | topic: social (conf: 0.314)
+--------------------------------------------------
+❌ Texto: me recomiendas una pelicula de ciencia ficcion?
+   Real    -> intent: CASUAL       | topic: social
+   Pred.   -> intent: UNKNOWN      | topic: social (conf: 0.296)
+--------------------------------------------------
+✅ Texto: estoy cansado de tantas clases en la universidad
+   Real    -> intent: CASUAL       | topic: social
+   Pred.   -> intent: CASUAL       | topic: social (conf: 0.268)
+--------------------------------------------------
+✅ Texto: xd xd xd que locura
+   Real    -> intent: CASUAL       | topic: social
+   Pred.   -> intent: CASUAL       | topic: social (conf: 0.557)
+--------------------------------------------------
+❌ Texto: te consideras mas inteligente que chatgpt?
+   Real    -> intent: CASUAL       | topic: social
+   Pred.   -> intent: ABOUT        | topic: social (conf: 0.218)
+--------------------------------------------------
+❌ Texto: que musica te gusta escuchar en tu servidor?
+   Real    -> intent: CASUAL       | topic: social
+   Pred.   -> intent: UNKNOWN      | topic: social (conf: 0.330)
+--------------------------------------------------
+✅ Texto: tengo sueño en esta clase
+   Real    -> intent: CASUAL       | topic: social
+   Pred.   -> intent: CASUAL       | topic: social (conf: 0.394)
+--------------------------------------------------
+❌ Texto: eres real o estoy loco?
+   Real    -> intent: CASUAL       | topic: social
+   Pred.   -> intent: ABOUT        | topic: social (conf: 0.798)
+--------------------------------------------------
+❌ Texto: asdfghjklñ esto no significa nada
+   Real    -> intent: UNKNOWN      | topic: social
+   Pred.   -> intent: CASUAL       | topic: social (conf: 0.827)
+--------------------------------------------------
+❌ Texto: mañana tengo que comprar aguacates en el mercado
+   Real    -> intent: UNKNOWN      | topic: social
+   Pred.   -> intent: DOUBT        | topic: social (conf: 0.364)
+--------------------------------------------------
+❌ Texto: cuanto cuesta cambiarle el aceite a un carro chevrolet?
+   Real    -> intent: UNKNOWN      | topic: social
+   Pred.   -> intent: DOUBT        | topic: social (conf: 0.546)
+--------------------------------------------------
+❌ Texto: el teorema de la relatividad general de einstein es complejo
+   Real    -> intent: UNKNOWN      | topic: social
+   Pred.   -> intent: EXPLAIN      | topic: ecuaciones (conf: 0.537)
+--------------------------------------------------
+❌ Texto: quien gano el mundial de futbol en 1998??
+   Real    -> intent: UNKNOWN      | topic: social
+   Pred.   -> intent: DOUBT        | topic: funciones (conf: 0.317)
+--------------------------------------------------
+❌ Texto: necesito una receta para hacer arroz con pollo colombiano
+   Real    -> intent: UNKNOWN      | topic: social
+   Pred.   -> intent: DOUBT        | topic: funciones (conf: 0.687)
+--------------------------------------------------
+❌ Texto: !!!!!!!!! ?????? @@@@@@@
+   Real    -> intent: UNKNOWN      | topic: social
+   Pred.   -> intent: EXPLAIN      | topic: social (conf: 0.167)
+--------------------------------------------------
+❌ Texto: la fotosintesis de las plantas convierte la luz solar en energia
+   Real    -> intent: UNKNOWN      | topic: social
+   Pred.   -> intent: EXPLAIN      | topic: ecuaciones (conf: 0.348)
+--------------------------------------------------
+❌ Texto: como se cura una gripe comun rapido en casa?
+   Real    -> intent: UNKNOWN      | topic: social
+   Pred.   -> intent: DOUBT        | topic: factorizacion (conf: 0.268)
+--------------------------------------------------
+❌ Texto: el dolar subio de precio frente al peso hoy
+   Real    -> intent: UNKNOWN      | topic: social
+   Pred.   -> intent: DOUBT        | topic: social (conf: 0.489)
+--------------------------------------------------
+❌ Texto: qwertyuiopasdfghjklzxcvbnm
+   Real    -> intent: UNKNOWN      | topic: social
+   Pred.   -> intent: QUIZ         | topic: social (conf: 0.163)
+--------------------------------------------------
+❌ Texto: quien es el presidente actual de Francia?
+   Real    -> intent: UNKNOWN      | topic: social
+   Pred.   -> intent: ABOUT        | topic: social (conf: 0.369)
+--------------------------------------------------
+❌ Texto: me pasas el link para descargar minecraft gratis?
+   Real    -> intent: UNKNOWN      | topic: social
+   Pred.   -> intent: ABOUT        | topic: social (conf: 0.255)
+--------------------------------------------------
+✅ Texto: la mecanica cuantica analiza las particulas subatomicas
+   Real    -> intent: UNKNOWN      | topic: social
+   Pred.   -> intent: UNKNOWN      | topic: social (conf: 0.253)
+--------------------------------------------------
+❌ Texto: donde queda la ciudad de tokio exactamente?
+   Real    -> intent: UNKNOWN      | topic: social
+   Pred.   -> intent: QUIZ         | topic: social (conf: 0.325)
+--------------------------------------------------
+❌ Texto: letra de la cancion mas famosa de shakira
+   Real    -> intent: UNKNOWN      | topic: social
+   Pred.   -> intent: GREETING     | topic: social (conf: 0.233)
+--------------------------------------------------
+❌ Texto: como se programa un videojuego en unity con c#?
+   Real    -> intent: UNKNOWN      | topic: social
+   Pred.   -> intent: DOUBT        | topic: social (conf: 0.347)
+--------------------------------------------------
+✅ Texto: el clima en europa durante el invierno es helado
+   Real    -> intent: UNKNOWN      | topic: social
+   Pred.   -> intent: UNKNOWN      | topic: social (conf: 0.784)
+--------------------------------------------------
+❌ Texto: ajshdkajshdkasjhdkajshd
+   Real    -> intent: UNKNOWN      | topic: social
+   Pred.   -> intent: EXPLAIN      | topic: social (conf: 0.167)
+--------------------------------------------------
+✅ Texto: que hora es en este momento en Sydney?
+   Real    -> intent: UNKNOWN      | topic: social
+   Pred.   -> intent: UNKNOWN      | topic: social (conf: 0.746)
+--------------------------------------------------
+
+============================================================
+🎯 MÉTRICAS DE INTENT
+============================================================
+Accuracy: 0.6500
+              precision    recall  f1-score   support
+
+       ABOUT       0.44      0.60      0.51        20
+      CASUAL       0.83      0.25      0.38        20
+       DOUBT       0.42      0.55      0.48        20
+     EXPLAIN       0.41      0.95      0.58        20
+     GOODBYE       1.00      1.00      1.00        20
+    GREETING       0.90      0.90      0.90        20
+    PRACTICE       0.80      0.80      0.80        20
+        QUIZ       0.89      0.85      0.87        20
+      THANKS       1.00      0.45      0.62        20
+     UNKNOWN       0.43      0.15      0.22        20
+
+    accuracy                           0.65       200
+   macro avg       0.71      0.65      0.64       200
+weighted avg       0.71      0.65      0.64       200
+
+
+============================================================
+📚 MÉTRICAS DE TÓPICO
+============================================================
+Accuracy: 0.8950
+               precision    recall  f1-score   support
+
+   ecuaciones       0.58      0.88      0.70         8
+factorizacion       0.70      0.88      0.78         8
+   fracciones       1.00      0.62      0.77         8
+    funciones       0.62      1.00      0.76         8
+ inecuaciones       1.00      1.00      1.00         8
+   logaritmos       0.89      1.00      0.94         8
+   polinomios       0.73      1.00      0.84         8
+    potencias       0.89      1.00      0.94         8
+    radicales       0.89      1.00      0.94         8
+     sistemas       0.88      0.88      0.88         8
+       social       0.99      0.88      0.93       120
+
+     accuracy                           0.90       200
+    macro avg       0.83      0.92      0.86       200
+ weighted avg       0.92      0.90      0.90       200
+
+
+============================================================
+Evaluación completada. Total ejemplos: 200
+Archivo guardado: /home/santiago/AI_EduAdapt/models/NLP/results/test_report.txt

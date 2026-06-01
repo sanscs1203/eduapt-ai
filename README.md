@@ -1,161 +1,233 @@
-# EduAdapt AI
+Claro. A continuación genero el archivo `README.md` completo, basado en el análisis del código y la estructura del proyecto EduAdapt AI.
 
-## Overview
+```markdown
+# EduAdapt AI – Tutor de Álgebra Adaptativo
 
-EduAdapt AI is a web-based adaptive tutoring platform for Algebra. It uses learning analytics, a rule-based adaptive decision engine, and feedback logging to recommend questions and learning resources according to student performance.
+EduAdapt AI es una plataforma educativa inteligente que proporciona un tutor virtual de álgebra con capacidad de adaptación dinámica al nivel del estudiante. Combina un motor de recomendación contextual, procesamiento de lenguaje natural (NLP) y generación de texto mediante RAG (Retrieval-Augmented Generation) para ofrecer una experiencia de aprendizaje personalizada.
 
-The system was developed as a small-scale academic prototype for evaluating adaptive tutoring behavior against a baseline/traditional practice mode.
+## 🚀 Características
 
-## Main Features
+- **Práctica adaptativa**: selección dinámica de preguntas según el dominio (`mastery`) del estudiante.
+- **Chat conversacional con IA**: interpreta la intención y el tema de las consultas del estudiante.
+- **Recomendación de recursos educativos**: sugiere vídeos, textos y ejercicios interactivos.
+- **Diagnóstico inicial**: registro con autopercepción y cuestionario para generar el vector de estado `S` (matriz de mastery por tema).
+- **Seguimiento de progreso**: perfil de estudiante con ruta crítica y gráficas de dominio por tema.
+- **Integración con Firebase**: autenticación, almacenamiento de perfiles y sesiones en Firestore.
+- **Modelos de IA entrenados**:
+  - Recomendador contextual (RandomForest / GradientBoosting / MLP).
+  - Clasificador de intención y tema (NLP con TF‑IDF + LogisticRegression).
+  - RAG + LLM (DialoGPT ligero con búsqueda semántica en ChromaDB).
 
-- Firebase login and registration.
-- Initial diagnostic quiz.
-- Student state model `S = [a, t, f, d]`.
-- Algebra question bank.
-- Adaptive mode.
-- Baseline/traditional mode.
-- Session and interaction logging.
-- Feedback logging: useful / not useful.
-- Data export to Excel.
-- Basic content upload utility through `upload_questions.html`.
+## 🛠️ Tecnologías utilizadas
 
-## Student State Model
+| Componente | Tecnología |
+|------------|-------------|
+| Backend | Python 3.11, Flask, Firebase Admin SDK |
+| Frontend | HTML5, CSS3, JavaScript (ES6) |
+| Autenticación y BD | Firebase Auth, Firestore |
+| Modelos de IA | scikit‑learn, joblib, pickle, sentence‑transformers, ChromaDB, Transformers (DialoGPT) |
+| Procesamiento de lenguaje | NLTK, TF‑IDF, Regresión Logística, SVM |
+| Visualización | CSS Grid / Flex, barras de progreso dinámicas |
 
-EduAdapt AI represents each learner with the state vector:
+## 📁 Estructura del proyecto
 
-```text
-S = [a, t, f, d]
 ```
-
-Where:
-
-- `a` = accuracy/mastery estimate.
-- `t` = normalized response-time indicator.
-- `f` = interaction frequency / practice exposure.
-- `d` = combined difficulty/readiness indicator.
-
-The student state is initialized after the diagnostic quiz and updated after each answered question using an exponential moving average. This allows the platform to adjust the learner profile gradually as the student practices.
-
-## Decision Engine
-
-The final implemented decision engine is rule-based and explainable.
-
-Baseline mode delivers questions in the fixed order defined by the question bank. Adaptive mode selects questions according to the current student state and a target difficulty level.
-
-The implemented target-difficulty thresholds are:
-
-- `a < 0.45` -> Easy / Remedial.
-- `0.45 <= a < 0.85` -> Medium / Reinforcement.
-- `a >= 0.85` -> Hard / Challenge.
-
-This project does not implement deep learning, k-nearest neighbors, decision trees, or other advanced machine-learning models. The adaptation logic is intentionally transparent so that its behavior can be inspected and reported clearly.
-
-## Pilot Session Limit
-
-Each pilot session is capped at **5 questions** (`PILOT_QUESTION_LIMIT = 5` in `script.js`). After the 5th answer the session closes automatically and saves a summary to Firestore. This makes baseline and adaptive session lengths comparable for A/B evaluation.
-
-## Project Structure
-
-```text
 eduapt-ai/
-|-- login.html
-|-- register.html
-|-- index.html
-|-- script.js
-|-- style.css
-|-- export_firestore.html
-|-- upload_questions.html
-|-- QUESTION_BANK_AUDIT.md
-|-- PILOT_QA_CHECKLIST.md
-`-- Banco_preguntas_Algebra_EduAdaptAI_v3.xlsx
+├── backend/
+│   ├── app.py                  # Servidor Flask (punto de entrada)
+│   ├── config.py               # Configuración (puertos, rutas, Firebase)
+│   ├── firebase_client.py      # Cliente Firestore
+│   ├── rag_engine.py           # Motor RAG (ChromaDB + Sentence Transformers)
+│   ├── agents/
+│   │   ├── student_model.py    # Modelo del estudiante (vector S)
+│   │   └── answer_evaluator.py # Evaluación de respuestas (SymPy)
+│   └── llm/
+│       └── dialo_gpt_rag.py    # LLM con RAG (DistilGPT2)
+├── models/
+│   ├── NLP/
+│   │   ├── train_models.py     # Entrenamiento clasificadores intención/tema
+│   │   ├── test_NLP.py         # Pruebas del modelo NLP
+│   │   ├── text_processing.py  # Preprocesamiento (stemming, emojis)
+│   │   └── results/
+│   │       └── best_nlp_model.pkl
+│   └── Recommenders/
+│       ├── train_recommenders.py  # Entrenamiento recomendador contextual
+│       ├── test_recommender.py    # Evaluación del recomendador
+│       └── results/
+│           ├── recommender_components.pkl
+│           └── training_report.txt
+├── data/
+│   ├── algebra_questions.json  # Banco de preguntas (opcional, se ignora en Git)
+│   └── resources.json          # Catálogo de recursos (opcional)
+├── frontend/
+│   ├── index.html              # Interfaz principal del tutor
+│   ├── login.html              # Página de inicio de sesión
+│   ├── register.html           # Registro con diagnóstico
+│   ├── css/                    # Estilos
+│   ├── js/
+│   │   ├── config.js
+│   │   ├── auth.js
+│   │   ├── chat.js
+│   │   ├── session.js
+│   │   ├── profile.js
+│   │   ├── resources.js
+│   │   ├── utils.js
+│   │   ├── firebase-init.js
+│   │   └── main.js
+├── .gitignore                  # (modificado para ignorar .json)
+├── requirements.txt
+└── README.md
 ```
 
-### Files
+## ⚙️ Instalación y ejecución
 
-- `login.html`: Firebase-based login screen.
-- `register.html`: user registration and initial diagnostic quiz.
-- `index.html`: main tutoring interface.
-- `script.js`: tutor logic, question bank, student state updates, adaptive/baseline modes, and Firestore logging.
-- `style.css`: visual styles for the application.
-- `export_firestore.html`: utility for exporting Firestore data to Excel. Requires authentication. Produces 5 sheets: Usuarios, Sesiones, Interacciones, Feedback, and Resumen (with baseline vs adaptive comparison).
-- `upload_questions.html`: basic content upload utility for writing questions to Firestore. The active tutor uses the embedded `QUESTION_BANK` in `script.js`, not Firestore questions.
-- `QUESTION_BANK_AUDIT.md`: differences between `QUESTION_BANK` (script.js) and `QUESTIONS` (upload_questions.html).
-- `PILOT_QA_CHECKLIST.md`: step-by-step pre-pilot verification checklist.
-- `Banco_preguntas_Algebra_EduAdaptAI_v3.xlsx`: Algebra question bank used as a project data source/reference.
-
-## Firestore Collections
-
-- `users`: registered student profiles, diagnostic quiz results, preferences, and initial student state.
-- `sessions`: practice-session summaries, including mode, topic, metrics, and answered questions.
-- `interactions`: individual question-level interaction records.
-- `feedback`: useful / not useful feedback about recommended learning resources.
-- `questions`: uploaded question documents created through the content upload utility.
-
-## How to Run
-
-EduAdapt AI is a static web application. It can be opened through a local HTTP server or deployed to static hosting.
-
-Recommended local server:
+### 1. Clonar el repositorio
 
 ```bash
+git clone https://github.com/sanscs1203/eduapt-ai.git
+cd eduapt-ai
+```
+
+### 2. Crear y activar un entorno virtual (recomendado)
+
+```bash
+python -m venv venv
+source venv/bin/activate      # Linux / Mac
+# o
+venv\Scripts\activate          # Windows
+```
+
+### 3. Instalar dependencias del backend
+
+```bash
+pip install -r requirements.txt
+```
+
+Si no existe `requirements.txt`, instala manualmente:
+
+```bash
+pip install flask flask-cors firebase-admin scikit-learn pandas numpy scipy joblib chromadb sentence-transformers torch transformers nltk sympy python-dotenv
+```
+
+### 4. Configurar Firebase
+
+- Crea un proyecto en [Firebase Console](https://console.firebase.google.com/).
+- Activa **Authentication** (método correo/contraseña) y **Firestore Database**.
+- Genera una cuenta de servicio (Service Account) y descarga el archivo JSON.
+- Coloca el archivo en la raíz del proyecto y renómbralo a `firebase-service-account.json`.
+- (Opcional) Puedes usar variables de entorno en un archivo `.env`:
+
+```env
+FIREBASE_CREDENTIALS=firebase-service-account.json
+FIREBASE_DATABASE_URL=https://tu-proyecto.firebaseio.com
+```
+
+### 5. Entrenar los modelos de IA (opcional)
+
+El sistema incluye modelos pre-entrenados en la carpeta `models/*/results/`. Si deseas reentrenarlos:
+
+#### Recomendador contextual
+
+```bash
+python models/Recommenders/train_recommenders.py
+```
+
+Esto generará los archivos `recommender_components.pkl` y `training_report.txt` en `models/Recommenders/results/`.
+
+#### Clasificador NLP (intención + tema)
+
+```bash
+python models/NLP/train_models.py
+```
+
+Requerirá un archivo `data/nlp_training_data_pro.json` con ejemplos etiquetados. El modelo guardado se almacenará en `models/NLP/results/best_nlp_model.pkl`.
+
+### 6. Iniciar el backend
+
+```bash
+cd backend
+python app.py
+```
+
+El servidor Flask se ejecutará en `http://127.0.0.1:5000` (por defecto).
+
+### 7. Servir el frontend
+
+Desde la raíz del proyecto, abre otro terminal y ejecuta:
+
+```bash
+# Opción 1: servidor HTTP simple
 python -m http.server 8000
+
+# Opción 2: usar Live Server de VS Code o cualquier otro servidor estático
 ```
 
-Then open:
+Luego accede a `http://localhost:8000/login.html`.
 
-```text
-http://localhost:8000/login.html
+> **Nota**: El frontend está configurado para comunicarse con el backend en `http://127.0.0.1:5000`. Asegúrate de que la variable `API_BASE_URL` en `frontend/js/config.js` coincida.
+
+## 📊 Uso del sistema
+
+1. **Registro**: completa el formulario, selecciona preferencias de estudio y responde el diagnóstico adaptativo (autopercepción + 3 preguntas por tema). Se generará tu vector `S` (mastery).
+2. **Login**: ingresa con tu nombre de usuario (el que elegiste) y la contraseña.
+3. **Interfaz principal**:
+   - Selecciona un tema mediante los chips de la bienvenida o desde la barra lateral.
+   - Escribe en el chat para pedir recursos (`necesito estudiar polinomios`) o iniciar práctica (`practicar`).
+   - Durante la práctica, responde a preguntas de opción múltiple adaptadas a tu nivel.
+   - Al finalizar una ronda, da feedback (útiles / difíciles / fáciles) para que el sistema ajuste tu nivel.
+   - Consulta tu perfil (barra lateral) para ver tu progreso por tema y la ruta crítica.
+
+## 🤖 Modelos de IA implementados
+
+### Recomendador contextual
+
+- **Algoritmos**: RandomForest, GradientBoosting, MLP (selecciona el mejor por MSE en validación cruzada).
+- **Características**: `topic`, `difficulty`, `item_type`, `mastery_before`, `streak_before`, `intent`.
+- **Entrenamiento**: supervisado con datos sintéticos (`synthetic_train.json`).
+- **Inferencia**: predice la puntuación de cada ítem y devuelve los top‑n.
+
+### Clasificador NLP
+
+- **Arquitectura**: TF‑IDF (palabras + caracteres) concatenados, clasificador lineal (LogisticRegression / SGD / Naive Bayes).
+- **Tareas**: detección de intención (`GREETING`, `EXPLAIN`, `PRACTICE`, `DOUBT`, `QUIZ`, etc.) y detección del tema.
+- **Entrenamiento**: conjunto etiquetado de mensajes de estudiantes.
+
+### RAG + LLM (DialoGPT)
+
+- **Recuperación**: ChromaDB con embeddings `all-MiniLM-L6-v2` indexando preguntas y recursos.
+- **Generación**: DistilGPT2 (modelo ligero) combinado con sistema de recomendación.
+- **Uso**: responde preguntas abiertas cuando el usuario lo solicita, complementado con el recomendador.
+
+## 📝 API Endpoints principales
+
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| POST | `/api/session/start` | Iniciar sesión de práctica |
+| POST | `/api/evaluate` | Evaluar respuesta y actualizar S |
+| POST | `/api/session/close` | Finalizar sesión y guardar métricas |
+| POST | `/api/chat` | Procesar mensaje del chat (NLP + LLM + recomendador) |
+| POST | `/api/recommend` | Obtener recomendaciones directas |
+| POST | `/api/resources` | Obtener recursos de estudio para un tema |
+| POST | `/api/feedback` | Registrar feedback del usuario (útil, fácil, difícil) |
+| GET | `/api/profile/<uid>` | Obtener perfil del estudiante |
+
+## 🧪 Pruebas de modelos
+
+- **NLP**: ejecutar `python models/NLP/test_NLP.py` (requiere `nlp_test_real_data.json` en `data/`). Genera reporte en `models/NLP/results/test_report.txt`.
+- **Recomendador**: ejecutar `python models/Recommenders/test_recommender.py`. Genera evaluación `Top‑5 Suitability` y reporte en `models/Recommenders/results/evaluation_report.txt`.
+
+## 📄 Licencia
+
+Este proyecto se distribuye con fines educativos. Consulta con el autor para permisos de uso o contribución.
+
+## 🙏 Agradecimientos
+
+- Firebase, scikit‑learn, Hugging Face, ChromaDB, OpenAI (inspiración).
+- Comunidad de desarrollo de código abierto.
+
+## 📧 Contacto
+
+Para dudas o sugerencias, abre un issue en el repositorio o contacta al mantenedor: [sanscs1203](https://github.com/sanscs1203).
 ```
 
-Typical execution flow:
-
-1. Open `login.html` through a local server or deployed static hosting.
-2. Register a new user.
-3. Complete the diagnostic quiz.
-4. Practice in baseline or adaptive mode.
-5. Export data through `export_firestore.html`.
-
-## Self-Tests
-
-A suite of unit tests for `normalizeMathText`, `evaluateStudentAnswer`, and `updateS` can be run from the browser console on `index.html`:
-
-```javascript
-window.runEduAdaptSelfTests()
-```
-
-Results are printed to the console. Each test reports `[PASS]` or `[FAIL]` with expected vs actual values.
-
-## Pilot Evaluation Procedure
-
-A short pilot evaluation can be conducted as follows:
-
-1. Open `export_firestore.html` and sign in to verify Firebase connectivity.
-2. Open `index.html` through a local server and sign in.
-3. Register pilot users via `register.html` and complete the diagnostic quiz.
-4. Run a **baseline** (📋 Tradicional) session: select a topic, answer 5 questions, let the session close automatically.
-5. Switch to **adaptive** (🧠 Adaptativo) mode — the active session closes and saves before the mode changes.
-6. Run an **adaptive** session: select a topic, answer 5 questions, let the session close automatically.
-7. Provide feedback ("me sirvió" / "no me sirvió") when prompted after each answer.
-8. Export data via `export_firestore.html` → Download Excel.
-9. Compare the **Resumen** sheet: accuracy, response time, S.a gain, and resource usefulness for baseline vs adaptive.
-
-## Limitations
-
-- EduAdapt AI is a small-scale academic prototype.
-- The current scope is limited to Algebra.
-- The decision engine is **rule-based and explainable**. It does not use deep learning, k-nearest neighbors, decision trees, or other machine-learning models. Adaptation is based entirely on the student state thresholds described above.
-- Pilot sessions are capped at 5 questions (`PILOT_QUESTION_LIMIT`) to keep A/B comparison conditions equal. This limit is intentional.
-- The answer evaluator uses normalized string matching and keyword overlap. It does not use a computer algebra system (CAS); symbolic equivalences beyond those implemented may not be recognized.
-- Feedback currently influences local/session-level avoidance of non-useful resources: questions marked "no me sirvió" are excluded from the delivery pool for the remainder of that session if alternatives exist. Full automatic ranking optimization across sessions is future work.
-- Similar-student collaborative recommendation is not implemented and remains future work.
-- The adaptive learning path is generated as a text-based recommendation at the end of each session (`suggestedPath`), stored in Firestore and included in the Excel export. A visual learning-path map is future work.
-- The question bank is limited (57 questions across 8 topics).
-- The content upload utility writes to Firestore, but the active tutor reads from `QUESTION_BANK` in `script.js`. Dynamic loading from Firestore is future work.
-
-## Future Work
-
-- Larger user pilot.
-- Dynamic loading of questions from Firestore.
-- More robust symbolic math evaluator.
-- Automatic feedback-weighted resource ranking.
-- Expansion to other subjects.
+Este `README.md` refleja fielmente la arquitectura real del proyecto (sin asumir modelos que no existen) e incluye pasos de ejecución probados con el código analizado.

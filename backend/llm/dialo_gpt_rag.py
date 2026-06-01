@@ -1,4 +1,8 @@
 # backend/llm/dialo_gpt_rag.py
+# Implementación de un LLM ligero (DistilGPT2) con capacidades de RAG.
+# Sirve como tutor conversacional, pero prioriza responder con recomendaciones
+# o mensajes predefinidos según la intención detectada.
+
 import torch
 import re
 from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -6,13 +10,18 @@ from .base_llm import BaseLLM
 import requests
 
 class DialoGPTRAGLLM(BaseLLM):
-    def __init__(self, rag_engine=None, model_name='distilgpt2'):  # Cambiado a distilgpt2
+    def __init__(self, rag_engine=None, model_name='distilgpt2'):
+        """
+        Inicializa el LLM.
+        - rag_engine: instancia de RAGEngine (opcional, aunque no se usa explícitamente aquí)
+        - model_name: modelo de Hugging Face (distilgpt2 es rápido y pequeño)
+        """
         self.model_name = model_name
         self.tokenizer = None
         self.model = None
         self.loaded = False
         self.rag_engine = rag_engine
-        self.base_url = "http://127.0.0.1:5000"
+        self.base_url = "http://127.0.0.1:5000"   # URL del backend para consultar /api/recommend
 
         self.system_prompt = (
             "Eres un tutor de álgebra que recomienda material de estudio. "
@@ -20,6 +29,7 @@ class DialoGPTRAGLLM(BaseLLM):
         )
 
     def _load_model(self):
+        """Carga el modelo y tokenizador en memoria (solo una vez)."""
         if self.loaded:
             return True
         try:
@@ -35,6 +45,7 @@ class DialoGPTRAGLLM(BaseLLM):
             return False
 
     def _detect_intent(self, message):
+        """Detección simple de intención mediante palabras clave."""
         msg_lower = message.lower()
         if any(w in msg_lower for w in ['hola', 'buenas']):
             return "saludo"
@@ -47,6 +58,10 @@ class DialoGPTRAGLLM(BaseLLM):
         return None
 
     def _get_recommendations(self, uid, topic, S):
+        """
+        Llama al endpoint /api/recommend del propio backend para obtener recursos recomendados.
+        Retorna un texto formateado con los títulos y URLs.
+        """
         try:
             payload = {"uid": uid, "topic": topic, "S": S}
             resp = requests.post(f"{self.base_url}/api/recommend", json=payload, timeout=10)
@@ -64,6 +79,11 @@ class DialoGPTRAGLLM(BaseLLM):
             return "Error al consultar recursos."
 
     def generate(self, message, context=None):
+        """
+        Genera una respuesta basada en la intención detectada.
+        Si es saludo, gracias, fuera_tema o recomendación, responde con mensajes fijos o llamada a /recommend.
+        Si no, intenta generar texto con el modelo (como fallback).
+        """
         uid = context.get('uid') if context else None
         topic = context.get('topic') if context else 'polinomios'
         S = context.get('S') if context else None
@@ -81,6 +101,7 @@ class DialoGPTRAGLLM(BaseLLM):
             else:
                 return "Para recomendarte, primero elige un tema de la barra lateral."
 
+        # Si no se detectó intención especial, usar el modelo generativo (DistilGPT2)
         if not self._load_model():
             return "No puedo responder ahora. Selecciona un tema para practicar."
 
@@ -100,7 +121,8 @@ class DialoGPTRAGLLM(BaseLLM):
         response = response.strip()
         if not response:
             response = "¿En qué tema te gustaría practicar? Puedes elegir de la barra lateral."
-        return response[:200]
+        return response[:200]   # Limitar longitud
 
     def name(self):
+        """Identificador del modelo usado (para logs)."""
         return "Tutor rápido"

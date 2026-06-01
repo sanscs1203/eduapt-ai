@@ -1,12 +1,13 @@
 Training Report - 3 Models Evaluation
-Date: 2026-05-19 01:40:42
+Date: 2026-05-31 18:03:09
 Dataset: 32925 train / 9008 test samples
-Total time: 11.6 min
+Total time: 9.4 min
 
-Models:
+Models performance (cross-validation MSE):
     RandomForest        MSE: 0.0025
     GradientBoosting    MSE: 0.0022
     MLP                 MSE: 0.0023
 
-Selected: GradientBoosting (lowest MSE)
-Saved as: results/best_recom_model.pkl
+Selected model: GradientBoosting (lowest MSE)
+Saved components: recommender_components.pkl (dict with regressor, encoders, feature_columns)
+Also saved: best_recom_model.pkl (full ContextualRecommender object)
