@@ -1,37 +1,35 @@
-Claro. A continuación genero el archivo `README.md` completo, basado en el análisis del código y la estructura del proyecto EduAdapt AI.
-
-```markdown
 # EduAdapt AI – Tutor de Álgebra Adaptativo
 
 EduAdapt AI es una plataforma educativa inteligente que proporciona un tutor virtual de álgebra con capacidad de adaptación dinámica al nivel del estudiante. Combina un motor de recomendación contextual, procesamiento de lenguaje natural (NLP) y generación de texto mediante RAG (Retrieval-Augmented Generation) para ofrecer una experiencia de aprendizaje personalizada.
 
 ## 🚀 Características
 
-- **Práctica adaptativa**: selección dinámica de preguntas según el dominio (`mastery`) del estudiante.
-- **Chat conversacional con IA**: interpreta la intención y el tema de las consultas del estudiante.
-- **Recomendación de recursos educativos**: sugiere vídeos, textos y ejercicios interactivos.
-- **Diagnóstico inicial**: registro con autopercepción y cuestionario para generar el vector de estado `S` (matriz de mastery por tema).
-- **Seguimiento de progreso**: perfil de estudiante con ruta crítica y gráficas de dominio por tema.
-- **Integración con Firebase**: autenticación, almacenamiento de perfiles y sesiones en Firestore.
-- **Modelos de IA entrenados**:
-  - Recomendador contextual (RandomForest / GradientBoosting / MLP).
-  - Clasificador de intención y tema (NLP con TF‑IDF + LogisticRegression).
-  - RAG + LLM (DialoGPT ligero con búsqueda semántica en ChromaDB).
+* **Práctica adaptativa**: selección dinámica de preguntas según el dominio (`mastery`) del estudiante.
+* **Chat conversacional con IA**: interpreta la intención y el tema de las consultas del estudiante.
+* **Recomendación de recursos educativos**: sugiere vídeos, textos y ejercicios interactivos.
+* **Diagnóstico inicial**: registro con autopercepción y cuestionario para generar el vector de estado `S` (matriz de mastery por tema).
+* **Seguimiento de progreso**: perfil de estudiante con ruta crítica y gráficas de dominio por tema.
+* **Integración con Firebase**: autenticación, almacenamiento de perfiles y sesiones en Firestore.
+* **Modelos de IA entrenados**:
+
+  * Recomendador contextual (RandomForest / GradientBoosting / MLP).
+  * Clasificador de intención y tema (NLP con TF-IDF + LogisticRegression).
+  * RAG + LLM (DialoGPT ligero con búsqueda semántica en ChromaDB).
 
 ## 🛠️ Tecnologías utilizadas
 
-| Componente | Tecnología |
-|------------|-------------|
-| Backend | Python 3.11, Flask, Firebase Admin SDK |
-| Frontend | HTML5, CSS3, JavaScript (ES6) |
-| Autenticación y BD | Firebase Auth, Firestore |
-| Modelos de IA | scikit‑learn, joblib, pickle, sentence‑transformers, ChromaDB, Transformers (DialoGPT) |
-| Procesamiento de lenguaje | NLTK, TF‑IDF, Regresión Logística, SVM |
-| Visualización | CSS Grid / Flex, barras de progreso dinámicas |
+| Componente                | Tecnología                                                                             |
+| ------------------------- | -------------------------------------------------------------------------------------- |
+| Backend                   | Python 3.11, Flask, Firebase Admin SDK                                                 |
+| Frontend                  | HTML5, CSS3, JavaScript (ES6)                                                          |
+| Autenticación y BD        | Firebase Auth, Firestore                                                               |
+| Modelos de IA             | scikit-learn, joblib, pickle, sentence-transformers, ChromaDB, Transformers (DialoGPT) |
+| Procesamiento de lenguaje | NLTK, TF-IDF, Regresión Logística, SVM                                                 |
+| Visualización             | CSS Grid, Flexbox, barras de progreso dinámicas                                        |
 
 ## 📁 Estructura del proyecto
 
-```
+```text
 eduapt-ai/
 ├── backend/
 │   ├── app.py                  # Servidor Flask (punto de entrada)
@@ -45,25 +43,25 @@ eduapt-ai/
 │       └── dialo_gpt_rag.py    # LLM con RAG (DistilGPT2)
 ├── models/
 │   ├── NLP/
-│   │   ├── train_models.py     # Entrenamiento clasificadores intención/tema
-│   │   ├── test_NLP.py         # Pruebas del modelo NLP
-│   │   ├── text_processing.py  # Preprocesamiento (stemming, emojis)
+│   │   ├── train_models.py
+│   │   ├── test_NLP.py
+│   │   ├── text_processing.py
 │   │   └── results/
 │   │       └── best_nlp_model.pkl
 │   └── Recommenders/
-│       ├── train_recommenders.py  # Entrenamiento recomendador contextual
-│       ├── test_recommender.py    # Evaluación del recomendador
+│       ├── train_recommenders.py
+│       ├── test_recommender.py
 │       └── results/
 │           ├── recommender_components.pkl
 │           └── training_report.txt
 ├── data/
-│   ├── algebra_questions.json  # Banco de preguntas (opcional, se ignora en Git)
-│   └── resources.json          # Catálogo de recursos (opcional)
+│   ├── algebra_questions.json
+│   └── resources.json
 ├── frontend/
-│   ├── index.html              # Interfaz principal del tutor
-│   ├── login.html              # Página de inicio de sesión
-│   ├── register.html           # Registro con diagnóstico
-│   ├── css/                    # Estilos
+│   ├── index.html
+│   ├── login.html
+│   ├── register.html
+│   ├── css/
 │   ├── js/
 │   │   ├── config.js
 │   │   ├── auth.js
@@ -74,7 +72,7 @@ eduapt-ai/
 │   │   ├── utils.js
 │   │   ├── firebase-init.js
 │   │   └── main.js
-├── .gitignore                  # (modificado para ignorar .json)
+├── .gitignore
 ├── requirements.txt
 └── README.md
 ```
@@ -88,22 +86,25 @@ git clone https://github.com/sanscs1203/eduapt-ai.git
 cd eduapt-ai
 ```
 
-### 2. Crear y activar un entorno virtual (recomendado)
+### 2. Crear y activar un entorno virtual
 
 ```bash
 python -m venv venv
-source venv/bin/activate      # Linux / Mac
-# o
-venv\Scripts\activate          # Windows
+
+# Linux / macOS
+source venv/bin/activate
+
+# Windows
+venv\Scripts\activate
 ```
 
-### 3. Instalar dependencias del backend
+### 3. Instalar dependencias
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Si no existe `requirements.txt`, instala manualmente:
+Si no existe el archivo `requirements.txt`:
 
 ```bash
 pip install flask flask-cors firebase-admin scikit-learn pandas numpy scipy joblib chromadb sentence-transformers torch transformers nltk sympy python-dotenv
@@ -111,20 +112,24 @@ pip install flask flask-cors firebase-admin scikit-learn pandas numpy scipy jobl
 
 ### 4. Configurar Firebase
 
-- Crea un proyecto en [Firebase Console](https://console.firebase.google.com/).
-- Activa **Authentication** (método correo/contraseña) y **Firestore Database**.
-- Genera una cuenta de servicio (Service Account) y descarga el archivo JSON.
-- Coloca el archivo en la raíz del proyecto y renómbralo a `firebase-service-account.json`.
-- (Opcional) Puedes usar variables de entorno en un archivo `.env`:
+1. Crear un proyecto en Firebase Console.
+2. Habilitar Authentication (correo y contraseña).
+3. Habilitar Firestore Database.
+4. Descargar el archivo de credenciales de la cuenta de servicio.
+5. Guardarlo en la raíz del proyecto como:
+
+```text
+firebase-service-account.json
+```
+
+Opcionalmente, utilizar un archivo `.env`:
 
 ```env
 FIREBASE_CREDENTIALS=firebase-service-account.json
 FIREBASE_DATABASE_URL=https://tu-proyecto.firebaseio.com
 ```
 
-### 5. Entrenar los modelos de IA (opcional)
-
-El sistema incluye modelos pre-entrenados en la carpeta `models/*/results/`. Si deseas reentrenarlos:
+### 5. Entrenar modelos (opcional)
 
 #### Recomendador contextual
 
@@ -132,102 +137,234 @@ El sistema incluye modelos pre-entrenados en la carpeta `models/*/results/`. Si 
 python models/Recommenders/train_recommenders.py
 ```
 
-Esto generará los archivos `recommender_components.pkl` y `training_report.txt` en `models/Recommenders/results/`.
+Archivos generados:
 
-#### Clasificador NLP (intención + tema)
+```text
+models/Recommenders/results/
+├── recommender_components.pkl
+└── training_report.txt
+```
+
+#### Clasificador NLP
 
 ```bash
 python models/NLP/train_models.py
 ```
 
-Requerirá un archivo `data/nlp_training_data_pro.json` con ejemplos etiquetados. El modelo guardado se almacenará en `models/NLP/results/best_nlp_model.pkl`.
+Requiere:
 
-### 6. Iniciar el backend
+```text
+data/nlp_training_data_pro.json
+```
+
+Archivo generado:
+
+```text
+models/NLP/results/best_nlp_model.pkl
+```
+
+### 6. Ejecutar el backend
 
 ```bash
 cd backend
 python app.py
 ```
 
-El servidor Flask se ejecutará en `http://127.0.0.1:5000` (por defecto).
+Servidor disponible en:
+
+```text
+http://127.0.0.1:5000
+```
 
 ### 7. Servir el frontend
 
-Desde la raíz del proyecto, abre otro terminal y ejecuta:
-
 ```bash
-# Opción 1: servidor HTTP simple
 python -m http.server 8000
-
-# Opción 2: usar Live Server de VS Code o cualquier otro servidor estático
 ```
 
-Luego accede a `http://localhost:8000/login.html`.
+Acceder desde:
 
-> **Nota**: El frontend está configurado para comunicarse con el backend en `http://127.0.0.1:5000`. Asegúrate de que la variable `API_BASE_URL` en `frontend/js/config.js` coincida.
+```text
+http://localhost:8000/login.html
+```
+
+> **Nota:** Verifica que `API_BASE_URL` en `frontend/js/config.js` coincida con la dirección del backend.
+
+---
 
 ## 📊 Uso del sistema
 
-1. **Registro**: completa el formulario, selecciona preferencias de estudio y responde el diagnóstico adaptativo (autopercepción + 3 preguntas por tema). Se generará tu vector `S` (mastery).
-2. **Login**: ingresa con tu nombre de usuario (el que elegiste) y la contraseña.
-3. **Interfaz principal**:
-   - Selecciona un tema mediante los chips de la bienvenida o desde la barra lateral.
-   - Escribe en el chat para pedir recursos (`necesito estudiar polinomios`) o iniciar práctica (`practicar`).
-   - Durante la práctica, responde a preguntas de opción múltiple adaptadas a tu nivel.
-   - Al finalizar una ronda, da feedback (útiles / difíciles / fáciles) para que el sistema ajuste tu nivel.
-   - Consulta tu perfil (barra lateral) para ver tu progreso por tema y la ruta crítica.
+### Registro
+
+El estudiante:
+
+* Completa el formulario de registro.
+* Selecciona preferencias de estudio.
+* Responde el diagnóstico adaptativo (autopercepción + preguntas diagnósticas).
+* Obtiene su vector de estado `S` (mastery por tema).
+
+### Inicio de sesión
+
+Ingresar con:
+
+* Nombre de usuario.
+* Contraseña.
+
+### Tutor adaptativo
+
+El estudiante puede:
+
+* Seleccionar un tema desde la interfaz.
+* Solicitar recursos educativos.
+* Iniciar sesiones de práctica.
+* Responder preguntas adaptadas a su nivel.
+* Proporcionar retroalimentación.
+* Consultar su perfil y progreso.
+
+---
 
 ## 🤖 Modelos de IA implementados
 
 ### Recomendador contextual
 
-- **Algoritmos**: RandomForest, GradientBoosting, MLP (selecciona el mejor por MSE en validación cruzada).
-- **Características**: `topic`, `difficulty`, `item_type`, `mastery_before`, `streak_before`, `intent`.
-- **Entrenamiento**: supervisado con datos sintéticos (`synthetic_train.json`).
-- **Inferencia**: predice la puntuación de cada ítem y devuelve los top‑n.
+**Algoritmos evaluados**
+
+* Random Forest
+* Gradient Boosting
+* MLP Regressor
+
+**Variables utilizadas**
+
+* `topic`
+* `difficulty`
+* `item_type`
+* `mastery_before`
+* `streak_before`
+* `intent`
+
+**Salida**
+
+* Predicción de relevancia.
+* Selección de recursos Top-N.
 
 ### Clasificador NLP
 
-- **Arquitectura**: TF‑IDF (palabras + caracteres) concatenados, clasificador lineal (LogisticRegression / SGD / Naive Bayes).
-- **Tareas**: detección de intención (`GREETING`, `EXPLAIN`, `PRACTICE`, `DOUBT`, `QUIZ`, etc.) y detección del tema.
-- **Entrenamiento**: conjunto etiquetado de mensajes de estudiantes.
+**Arquitectura**
 
-### RAG + LLM (DialoGPT)
+* TF-IDF de palabras.
+* TF-IDF de caracteres.
+* Clasificador lineal.
 
-- **Recuperación**: ChromaDB con embeddings `all-MiniLM-L6-v2` indexando preguntas y recursos.
-- **Generación**: DistilGPT2 (modelo ligero) combinado con sistema de recomendación.
-- **Uso**: responde preguntas abiertas cuando el usuario lo solicita, complementado con el recomendador.
+**Modelos probados**
 
-## 📝 API Endpoints principales
+* Logistic Regression
+* SGD Classifier
+* Naive Bayes
 
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| POST | `/api/session/start` | Iniciar sesión de práctica |
-| POST | `/api/evaluate` | Evaluar respuesta y actualizar S |
-| POST | `/api/session/close` | Finalizar sesión y guardar métricas |
-| POST | `/api/chat` | Procesar mensaje del chat (NLP + LLM + recomendador) |
-| POST | `/api/recommend` | Obtener recomendaciones directas |
-| POST | `/api/resources` | Obtener recursos de estudio para un tema |
-| POST | `/api/feedback` | Registrar feedback del usuario (útil, fácil, difícil) |
-| GET | `/api/profile/<uid>` | Obtener perfil del estudiante |
+**Tareas**
 
-## 🧪 Pruebas de modelos
+* Detección de intención.
+* Clasificación temática.
 
-- **NLP**: ejecutar `python models/NLP/test_NLP.py` (requiere `nlp_test_real_data.json` en `data/`). Genera reporte en `models/NLP/results/test_report.txt`.
-- **Recomendador**: ejecutar `python models/Recommenders/test_recommender.py`. Genera evaluación `Top‑5 Suitability` y reporte en `models/Recommenders/results/evaluation_report.txt`.
+### RAG + LLM
+
+**Recuperación**
+
+* ChromaDB
+* Embeddings `all-MiniLM-L6-v2`
+
+**Generación**
+
+* DistilGPT2
+* Respuestas enriquecidas mediante recuperación semántica.
+
+**Objetivo**
+
+* Resolver dudas abiertas.
+* Complementar recomendaciones y explicaciones.
+
+---
+
+## 📝 API principal
+
+| Método | Endpoint             | Descripción                            |
+| ------ | -------------------- | -------------------------------------- |
+| POST   | `/api/session/start` | Iniciar sesión de práctica             |
+| POST   | `/api/evaluate`      | Evaluar respuesta y actualizar mastery |
+| POST   | `/api/session/close` | Finalizar sesión                       |
+| POST   | `/api/chat`          | Procesar mensaje del estudiante        |
+| POST   | `/api/recommend`     | Obtener recomendaciones                |
+| POST   | `/api/resources`     | Obtener recursos por tema              |
+| POST   | `/api/feedback`      | Registrar retroalimentación            |
+| GET    | `/api/profile/<uid>` | Obtener perfil del estudiante          |
+
+---
+
+## 🧪 Evaluación de modelos
+
+### NLP
+
+```bash
+python models/NLP/test_NLP.py
+```
+
+Requiere:
+
+```text
+data/nlp_test_real_data.json
+```
+
+Genera:
+
+```text
+models/NLP/results/test_report.txt
+```
+
+### Recomendador
+
+```bash
+python models/Recommenders/test_recommender.py
+```
+
+Genera:
+
+```text
+models/Recommenders/results/evaluation_report.txt
+```
+
+Incluye métricas como:
+
+* Top-5 Suitability
+* Error de predicción
+* Ranking de recomendaciones
+
+---
 
 ## 📄 Licencia
 
-Este proyecto se distribuye con fines educativos. Consulta con el autor para permisos de uso o contribución.
+Este proyecto se distribuye con fines educativos y académicos.
+
+Para usos comerciales, redistribución o contribuciones externas, contactar al autor del proyecto.
+
+---
 
 ## 🙏 Agradecimientos
 
-- Firebase, scikit‑learn, Hugging Face, ChromaDB, OpenAI (inspiración).
-- Comunidad de desarrollo de código abierto.
+* Firebase
+* Scikit-Learn
+* Hugging Face Transformers
+* ChromaDB
+* Sentence Transformers
+* Comunidad Open Source
+
+---
 
 ## 📧 Contacto
 
-Para dudas o sugerencias, abre un issue en el repositorio o contacta al mantenedor: [sanscs1203](https://github.com/sanscs1203).
-```
+Para reportar errores, realizar sugerencias o contribuir:
 
-Este `README.md` refleja fielmente la arquitectura real del proyecto (sin asumir modelos que no existen) e incluye pasos de ejecución probados con el código analizado.
+* GitHub: https://github.com/sanscs1203
+* Repositorio: https://github.com/sanscs1203/eduapt-ai
+
+También puedes abrir un *Issue* directamente en el repositorio.
+
